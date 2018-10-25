@@ -3,14 +3,16 @@ Our backend framework will involve the usage of Python, with Flask and mySQL to 
 Tentative API Routes:
 ------------------------------------------------
 
+```
 //single organization
-(OrganizationInformation API
+OrganizationInformation API
+{
 	name,
 	id,
 	members[] {
 		id,
 		name
-	}
+	},
 	applications[] {
 		id,
 		name,
@@ -19,14 +21,15 @@ Tentative API Routes:
 		users[] {
 			id
 			name,
-		}
+		},
 		questions[] {
 			question
 			type, ( can be text entry, dropdown)
 			answers[]: (blank if entry, potential answers otherwise)
 		}
 	}
-)
+}
+
 //add to list
 joinOrg
 //remove from list
@@ -34,27 +37,23 @@ leaveOrg
 	
 //get all orgs for a given user
 getAllOrgs (
-
 	OrganizationInformation[]
 	
 )
 
 //user submission of appid
-submitApp
+submitApp 
+{
 		appid,
 		name,
-		questions 
+		questions {
 			answers[]
-	
-	
-
-
-
-
-
+		}
+}
 
 //all apps for a given user
 getAllApps
+{
 	applications [] {
 		appid,
 		orgname,
@@ -62,12 +61,12 @@ getAllApps
 		description
 		status,
 		questions[]
-			questions
+			questions,
 			answer
 	}
 
-
-	
+}
+```	
 	
 
 
