@@ -4,7 +4,7 @@ Tentative API Routes:
 ------------------------------------------------
 
 //single organization
-OrganizationInformation API
+(OrganizationInformation API
 	name,
 	id,
 	members[] {
@@ -26,7 +26,7 @@ OrganizationInformation API
 			answers[]: (blank if entry, potential answers otherwise)
 		}
 	}
-
+)
 //add to list
 joinOrg
 //remove from list
