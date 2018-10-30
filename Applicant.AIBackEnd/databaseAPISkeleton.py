@@ -13,7 +13,7 @@ api = Api(app)
 mysql = MySQL()
 
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'sdocs'
+app.config['MYSQL_PASSWORD'] = 'harbautics123'
 app.config['MYSQL_DB'] = 'TempList'
 app.config['MYSQL_HOST'] = 'localhost'
 mysql.init_app(app)
