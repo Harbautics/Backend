@@ -1,54 +1,58 @@
 {
- "name": "investing",
- "id" : 1,
- "members" : [ 
-              { "id" : 1, "name" : "thomas" },
-			  { "id" : 2, "name" : "troy" }
-			],
- "postings" :[{
-	"id": 1,
-	"name" : "consultant",
-	"status" : "open",
-	"description" : "you will tell people how to invest things",
-	"questions" : [ { "question" : "why do you want to consult?", "type": "text", "answers" : [""] },
-		{ "question" : "but really, why?", "type": "text", "answers" : [""] },
-		{ "question" : "years experience?", "type": "dropdown", "answers" : ["some", "absolutely none"] } ]
- 
- 	,
-	"applicants" : [ {"id" : 3, "name" : "jordan", "answers" : [ "cause fun", "cause really fun", "some"] }]
-		
-}]}
+	"organizations" : [
+	{
+	 "name": "investing",
+	 "id" : 1,
+	 "members" : [ 
+		      { "id" : 1, "name" : "thomas" },
+				  { "id" : 2, "name" : "troy" }
+				],
+	 "postings" :[{
+		"id": 1,
+		"name" : "consultant",
+		"status" : "open",
+		"description" : "you will tell people how to invest things",
+		"questions" : [ { "question" : "why do you want to consult?", "type": "text", "answers" : [""] },
+			{ "question" : "but really, why?", "type": "text", "answers" : [""] },
+			{ "question" : "years experience?", "type": "dropdown", "answers" : ["some", "absolutely none"] } ]
 
-{
- "name": "frat",
- "id" : 2,
- "members" : [ 
-              { "id" : 3, "name" : "jordan" },
-			  { "id" : 2, "name" : "troy" }
-			],
- "postings" :[{
-	"id": 1,
-	"name" : "frat fellow",
-	"status" : "closed",
-	"description" : "you will do frat things",
-	"questions" : [ { "question" : "why this frat?", "type": "text", "answers" : [""] } ],
-	"applicants" : [ {"id" : 4, "name" : "alexis", "answers" : [ "cause"] },
-					 {"id" : 5, "name" : "matt", "answers" : ["because its my frat"]}]
-		
-}]}
+		,
+		"applicants" : [ {"id" : 3, "name" : "jordan", "answers" : [ "cause fun", "cause really fun", "some"] }]
 
-{
- "name": "lonelyville",
- "id" : 2,
- "members" : [ 
-              { "id" : 6, "name" : "collin" }
-			],
- "postings" :[{
-	"id": 1,
-	"name" : "come say hello",
-	"status" : "open",
-	"description" : "be a friend",
-	"questions" : [ ],
-	"applicants" : []
-		
-}]}
+	}]},
+
+	{
+	 "name": "frat",
+	 "id" : 2,
+	 "members" : [ 
+		      { "id" : 3, "name" : "jordan" },
+				  { "id" : 2, "name" : "troy" }
+				],
+	 "postings" :[{
+		"id": 1,
+		"name" : "frat fellow",
+		"status" : "closed",
+		"description" : "you will do frat things",
+		"questions" : [ { "question" : "why this frat?", "type": "text", "answers" : [""] } ],
+		"applicants" : [ {"id" : 4, "name" : "alexis", "answers" : [ "cause"] },
+						 {"id" : 5, "name" : "matt", "answers" : ["because its my frat"]}]
+
+	}]},
+
+	{
+	 "name": "lonelyville",
+	 "id" : 2,
+	 "members" : [ 
+		      { "id" : 6, "name" : "collin" }
+				],
+	 "postings" :[{
+		"id": 1,
+		"name" : "come say hello",
+		"status" : "open",
+		"description" : "be a friend",
+		"questions" : [ ],
+		"applicants" : []
+
+	}]},
+	]
+}
