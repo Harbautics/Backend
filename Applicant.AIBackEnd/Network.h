@@ -61,6 +61,12 @@ public:
 		return a;
 	}
 
+	//std::vector<inout> feedforward(std::vector<inout> a) {
+	//	for (unsigned i = 0; i < weights.size() - 1; ++i) {
+	//		a = sigmoid((weights))
+	//	}
+	//}
+
 	void SGD(std::vector<inout> &training_data,
 		int epochs,
 		int mini_batch_size,
@@ -70,8 +76,8 @@ public:
 		bool monitor_evaluation_cost = false,
 		bool monitor_evaluation_accuracy = false,
 		bool monitor_training_cost = false,
-		bool monitor_training_accuracy = false,
-	    bool stocks = false) {
+		bool monitor_training_accuracy = false
+	) {
 		
 		
 		if (!evaluation_data.empty()) { int n_data = (int)evaluation_data.size(); }
@@ -92,22 +98,12 @@ public:
 			cout << "Epoch " << (i + 1) << " training complete\n";
 			//monitor_training_accuracy = false;
 			if (monitor_training_accuracy) {
-				if (!stocks) {
-					cout << "Training data accuracy: " << accuracy(training_data) <<
-						" / " << training_data.size() << "\n";
-				}
-				else {
-					cout << "Training data accuracy: " << stockAccuracy(training_data) << "\n";
-				}
+				cout << "Training data accuracy: " << accuracy(training_data) <<
+					" / " << training_data.size() << "\n";
 			}
 			if (monitor_evaluation_accuracy) {
-				if (!stocks) {
-					cout << "Evaluation data accuracy: " << accuracy(evaluation_data) <<
-						" / " << n_data << "\n";
-				}
-				else {
-					cout << "Evaluation data accuracy: " << stockAccuracy(evaluation_data) << "\n";
-				}
+				cout << "Evaluation data accuracy: " << accuracy(evaluation_data) <<
+					" / " << n_data << "\n";
 			}
 			//monitor_training_cost = false;
 			if (monitor_training_cost) {
@@ -269,7 +265,7 @@ public:
 		return total;
 	}
 
-	double stockAccuracy(std::vector<inout> &data) {
+	/*double stockAccuracy(std::vector<inout> &data) {
 		std::vector<std::pair<Eigen::VectorXd, Eigen::VectorXd>> results(data.size());
 		for (unsigned i = 0; i < data.size(); i++) {
 			//cout << data[i].first << ", " << data[i].second << endl;
@@ -286,7 +282,7 @@ public:
 		}
 		error /= (double)results.size();
 		return error;
-	}
+	}*/
 
 	double eval_cost(const std::vector<inout> &data, double lambda) {
 		double total_cost = 0.0;
