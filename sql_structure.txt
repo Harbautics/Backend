@@ -11,6 +11,9 @@ organizations
 postings 
 	post_id
 	organization_id
+	name
+	status
+	description
 
 ---------------------------------------
 //user is a member of team
