@@ -1,0 +1,29 @@
+Set of queries to handle organization info
+
+Separated into several queries to handle the arrays but not sure if strictly required?
+whos to say really
+
+tentative 11/4/18
+---------------------------------
+
+//org information query
+select or.org_name, or.description from organizations or
+	where or.org_id = {org_id_in}
+
+//get org members query
+select us.name, us.user_id from users us, members me
+	where me.org_id = {org_id_in}
+	
+//get postings
+select po.post_id, po.name, po.status, po.description from postings po
+	where po.org_id = {org_id_in}
+
+//get applicants for each posting
+select us.user_id, us.name from users us, applicants ap
+	where ap.post_id = po.post_id
+	and ap.user_id = us.user_id
+
+//get questions for each posting
+select qu.question, qu.type from questions qu
+	where qu.posting_id = {posting id}
+	
