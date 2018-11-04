@@ -1,0 +1,42 @@
+SQL Table Structure: tentative 11/4/18
+---------------------------------------
+
+organizations
+	org_name 
+	org_id
+	Description
+	(picture filepath?)	
+---------------------------------------
+//applications posted by club
+postings 
+	post_id
+	organization_id
+
+---------------------------------------
+//user is a member of team
+members
+	user_id
+	org_id
+	
+---------------------------------------
+//one row per question
+questions
+	question
+	type (text or dropdown)
+	posting_id
+---------------------------------------
+//user_id is an applicant to this posting
+applicants
+	user_id
+	post_id
+	application
+---------------------------------------	
+users
+	name
+	user_id
+	email
+	Password
+---------------------------------------
+
+tentative for now, maybe/probably better ways of handling things
+
