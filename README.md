@@ -1,5 +1,20 @@
 Our backend framework will involve the usage of Python, with Flask and mySQL to handle the API and database portions. This will be hosted on AWS
 
+# Current File Structure
+```bash
+├── Applicant.AIBackEnd
+│   ├── Cost.h
+│   ├── Driver.cpp
+│   ├── Load_data.h
+│   ├── Network.h
+│   ├── databaseAPISkeleton.py
+│   └── groupInformationAPI.py
+├── README.md
+├── base_queries.txt
+├── json.txt
+└── sql_structure.txt
+```
+
 Tentative API Routes:
 ------------------------------------------------
 
