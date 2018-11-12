@@ -1,4 +1,10 @@
 {
+	"user" : {
+		"name" : "bob",
+		"id:" : 10,
+		"password" : "hhhh",
+		"email" : "i@bob.com"
+	},
 	"organizations" : [
 	{
 	 "name": "investing",
