@@ -36,14 +36,21 @@ def post_create_org():
 	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
 	results = cursor.fetchall()
 	for row in results:
-		print(row[0])
-	return "Yeehaw\n"
+		retId = row[0]
+	return retId
 
 @app.route('/CreateUser', methods=['POST'])
 @cross_origin(origin='*')
 def post_create_user():
 	data = request.form
-	#cursor = mysql.connection.cursor()
+	cursor = mysql.connection.cursor()
+	cursor.execute("INSERT INTO Users ( name, email, password ) VALUES ( %s, %s, %s )", [data['username'], data['email'], data['password']])
+	mysql.connection.commit()
+	cursor.execute("SELECT * FROM Users WHERE name = %s", [data["email"]])
+	results = cursor.fetchall()
+	for row in results:
+		retId = row[0]
+	return retId
 	return None
 
 @app.route('/CreateSubmission', methods=['POST'])
