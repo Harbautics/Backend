@@ -1,55 +1,40 @@
+from flask import Flask, request, jsonify
 from flask_mysqldb import MySQL
 from flask_restful import Resource, Api
-import sys
-import subprocess
-import re
-import os
-import shutil
+from flask_cors import CORS, cross_origin
 
 #Flask and MySQL setup
 application = app = Flask(__name__)
 api = Api(app)
+CORS(app)
 
 mysql = MySQL()
 
+#MySQL setup
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'harbautics123'
-app.config['MYSQL_DB'] = 'TempList'
-app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_PASSWORD'] = 'sdocs123'
+app.config['MYSQL_DB'] = 'ApplicantAIDB'
+app.config['MYSQL_HOST'] = 'aa5mho3pd0cv71.czzaljfmuz2x.us-east-2.rds.amazonaws.com'
+app.config['MYSQL_PORT'] = 3306
 mysql.init_app(app)
 
-#Saves the json sent through the request. Currently labeled
-#temp, will be replaced soon with full json
-@app.route('/saveTemp', methods=['POST'])
-def save_temp():
-	#Get the data from the HTTP request
-	data = request.get_json(force=True)
-	#Connect to MySQL and get the cursor for making SQL Calls
-	cursor = mysql.connection.cursor()
-	try:	
-		#This is a prepared statement, utilizing parameters
-		cursor.execute("SELECT * FROM temps WHERE temp = %s", [data["temp"]])
-		#If it doesn't exist in the database, insert it
-		if cursor.rowcount == 0:
-			cursor.execute("INSERT INTO temps ( temp ) VALUES ( %s )", [data['temp']])
-			mysql.connection.commit()
-			return "Stored!\n"
-		else:
-			return "Already exists in DB!\n"
-	except:
-		#Any form of error, inform the user
-		return "ERROR! Not Stored!\n"
+@app.route('/saveOrganizationInfo', methods=['POST'])
+@cross_origin(origin='*')
+def save_hash():
+	data = request.form
+	return 'Stored! (jk, just for test purposes)\n'
 
-#Get the Temp object if it exists
-@app.route('/getTemp', methods=['POST'])
-def get_temp():
-	data = request.get_json(force=True)
-	cursor = mysql.connection.cursor()
-	cursor.execute("SELECT * FROM temps WHERE temp = %s", [data["temp"]])
-	if cursor.rowcount == 0:
-		return null
-	else:
-		return cursor.fetchall()
+@app.route('/getOrganizationInfo', methods=['POST'])
+@cross_origin(origin='*')
+def get_hash():
+	data = request.form
+	#cursor = mysql.connection.cursor()
+	return None
+
+@app.route('/getOrganizationInfo', methods=['GET'])
+@cross_origin(origin='*')
+def true_get_hash():
+	return None
 
 if __name__ == '__main__':
 	app.run(debug=True)
