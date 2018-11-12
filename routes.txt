@@ -10,6 +10,17 @@ create/deletePosting
 	description
 }
 
+//remove applicant from applicants table
+//potentially add applicant to members table for org
+decideApplicant
+{
+	username
+	password
+	org_name
+	position
+	decision
+}
+
 create/deleteSubmission
 {
 	username
