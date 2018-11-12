@@ -56,6 +56,7 @@ def post_create_user():
 		retId = row[0]
 	return str(retId) + "\n"
 
+#curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","email":"bob@bob.dcom","pos_name":"Best Friend","answers":["need a friend", "im 6 feet tall", "seems like we would be a good fit"]}' http://127.0.0.1:5000/CreateSubmission
 @app.route('/CreateSubmission', methods=['POST'])
 @cross_origin(origin='*')
 def post_create_submission():
