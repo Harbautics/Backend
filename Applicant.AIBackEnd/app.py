@@ -63,9 +63,22 @@ def post_create_submission():
 @app.route('/CreatePosting', methods=['POST'])
 @cross_origin(origin='*')
 def post_create_posting():
-	data = request.form
-	#cursor = mysql.connection.cursor()
-	return None
+	data = request.get_json()
+	cursor = mysql.connection.cursor()
+
+	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
+	results = cursor.fetchall()
+	orgId = 0
+	for row in results:
+		orgId = row[0]
+
+	cursor.execute("INSERT INTO Postings ( org_id, name, status, description ) VALUES ( %s, %s, %s, %s )", [orgId, data['pos_name'], "OPEN", data['description']])
+	mysql.connection.commit()
+	cursor.execute("SELECT * FROM Postings WHERE org_id = %s ORDER BY post_id DESC", [orgId])
+	results = cursor.fetchall()
+	for row in results:
+		retId = row[0]
+	return retId
 
 if __name__ == '__main__':
 	app.run(debug=True)
