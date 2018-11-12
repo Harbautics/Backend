@@ -1,0 +1,39 @@
+needed routes and information related to them
+--------------------------
+
+createPosting
+{
+	organization name
+	position name
+	description
+}
+
+createSubmission
+{
+	name
+	password
+	org_name
+	posting_id
+	answers []
+}
+
+CreateOrg
+{
+	"user": " ",
+	"password" : " ",
+	"org_name" : " ",
+	"description" : ""
+}
+
+createUser
+{
+	username
+	email
+	password
+}
+
+
+
+
+
+
