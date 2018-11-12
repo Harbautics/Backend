@@ -32,7 +32,6 @@ questions
 applicants
 	user_id
 	post_id
-	application
 ---------------------------------------	
 users
 	name
@@ -40,6 +39,13 @@ users
 	email
 	Password
 ---------------------------------------
+answers
+	answer
+	post_id
+	question_id
+	user_id
+---------------------------------------
+
 
 tentative for now, maybe/probably better ways of handling things
 
