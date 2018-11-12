@@ -39,16 +39,25 @@ def post_create_org():
 		print(row[0])
 	return "Yeehaw\n"
 
-@app.route('/getOrganizationInfo', methods=['POST'])
+@app.route('/CreateUser', methods=['POST'])
 @cross_origin(origin='*')
-def get_hash():
+def post_create_user():
 	data = request.form
 	#cursor = mysql.connection.cursor()
 	return None
 
-@app.route('/getOrganizationInfo', methods=['GET'])
+@app.route('/CreateSubmission', methods=['POST'])
 @cross_origin(origin='*')
-def true_get_hash():
+def post_create_submission():
+	data = request.form
+	#cursor = mysql.connection.cursor()
+	return None
+
+@app.route('/CreatePosting', methods=['POST'])
+@cross_origin(origin='*')
+def post_create_posting():
+	data = request.form
+	#cursor = mysql.connection.cursor()
 	return None
 
 if __name__ == '__main__':
