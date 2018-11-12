@@ -12,7 +12,8 @@ CREATE TABLE Postings (
 	status ENUM('OPEN', 'CLOSED'),
 	description VARCHAR(200),
 	PRIMARY KEY (post_id),
-	FOREIGN KEY (org_id) REFERENCES Organizations(org_id)
+	FOREIGN KEY (org_id) REFERENCES Organizations(org_id),
+	UNIQUE KEY (org_id, name)
 );
 
 CREATE TABLE Users (
@@ -24,11 +25,11 @@ CREATE TABLE Users (
 );
 
 CREATE TABLE Questions (
-	question_id BIGINT NOT NULL AUTO_INCREMENT,
+	question_id BIGINT NOT NULL,
 	post_id BIGINT NOT NULL,
 	question VARCHAR(400),
 	FOREIGN KEY (post_id) REFERENCES Postings(post_id),
-	PRIMARY KEY (question_id)
+	PRIMARY KEY (post_id, question_id)
 );
 
 /*CREATE TABLE DropdownOption (
@@ -45,10 +46,9 @@ CREATE TABLE Answers (
 	post_id BIGINT NOT NULL,
 	question_id BIGINT NOT NULL,
 	answer VARCHAR(400),
-	FOREIGN KEY (question_id) REFERENCES Questions(question_id),
-	FOREIGN KEY (post_id) REFERENCES Postings(post_id),
+	FOREIGN KEY (post_id, question_id) REFERENCES Questions(post_id, question_id),
 	FOREIGN KEY (user_id) REFERENCES Users(user_id),
-	PRIMARY KEY (post_id, user_id)
+	PRIMARY KEY (post_id, user_id, question_id)
 );
 
 
