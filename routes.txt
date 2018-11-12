@@ -1,0 +1,42 @@
+needed routes and information related to them
+--------------------------
+
+create/deletePosting
+{
+	username
+	password
+	organization name
+	position name
+	description
+}
+
+create/deleteSubmission
+{
+	username
+	password
+	org_name
+	posting_id
+	answers []
+}
+
+Create/deleteOrg
+{
+	"username": " ",
+	"password" : " ",
+	"org_name" : " ",
+	"description" : ""
+}
+
+create/deleteUser
+{
+	username
+	password
+	email
+	password
+}
+
+
+
+
+
+
