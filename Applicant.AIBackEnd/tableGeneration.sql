@@ -50,3 +50,20 @@ CREATE TABLE Answers (
 	FOREIGN KEY (user_id) REFERENCES Users(user_id),
 	PRIMARY KEY (post_id, user_id, question_id)
 );
+
+
+CREATE TABLE Applicants (
+	user_id BIGINT NOT NULL,
+	post_id BIGINT NOT NULL,
+	FOREIGN KEY (post_id) REFERENCES Postings(post_id),
+	FOREIGN KEY (user_id) REFERENCES Users(user_id),
+	PRIMARY KEY (post_id, user_id)
+);
+
+CREATE TABLE Members (
+	user_id BIGINT NOT NULL,
+	org_id BIGINT NOT NULL,
+	FOREIGN KEY (org_id) REFERENCES Organizations(org_id),
+	FOREIGN KEY (user_id) REFERENCES Users(user_id),
+	PRIMARY KEY (org_id, user_id)
+);
