@@ -1,5 +1,5 @@
 ./clear.sh
-./org.sh
 ./user.sh
+./org.sh
 ./posting.sh
 ./submissions.sh
