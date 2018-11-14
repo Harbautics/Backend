@@ -24,13 +24,14 @@ app.config['MYSQL_PORT'] = 3306
 '''
 
 mysql = MySQL()
-
+# testing locally
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'sdocs123'
+app.config['MYSQL_PASSWORD'] = 'mysql'
 app.config['MYSQL_DB'] = 'AAIDB'
-app.config['MYSQL_HOST'] = 'aa5mho3pd0cv71.czzaljfmuz2x.us-east-2.rds.amazonaws.com'
+app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_PORT'] = 3306
 mysql.init_app(app)
+
 
 @app.route('/test/removal', methods=['POST'])
 @cross_origin(origin='*')
@@ -44,10 +45,9 @@ def drop_all_rows():
 	cursor.execute("DELETE FROM Users")
 	mysql.connection.commit()
 
-	return "Cleaned!!"
+	return "Success"
 
-
-#curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","description":"This is Bobs club"}' http://127.0.0.1:5000/CreateOrg
+#curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","description":"This is Bobs club", "email":"bob@bob.com"}' http://127.0.0.1:5000/CreateOrg
 @app.route('/CreateOrg', methods=['POST'])
 @cross_origin(origin='*')
 def post_create_org():
@@ -59,13 +59,22 @@ def post_create_org():
 		return "ORG ALREADY EXISTS\n"
 
 	cursor.execute("INSERT INTO Organizations ( name, description ) VALUES ( %s, %s )", [data['org_name'], data['description']])
-	mysql.connection.commit()
 	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
 	results = cursor.fetchall()
 	retId = 0
 	for row in results:
 		retId = row[0]
+
+	cursor.execute("SELECT user_id FROM Users WHERE email = %s", [data['email']])
+	results = cursor.fetchall()
+	if cursor.rowcount == 0:
+		return "email dne in records"
+
+	cursor.execute("INSERT INTO Members (user_id, org_id) VALUES ( %s, %s )", [results[0], retId])
+	mysql.connection.commit()
+
 	return "OrganizationID: " + str(retId) + "\n"
+
 
 #curl --request POST -H "Content-Type: application/json" -d '{"name":"bob bob","email":"bob@bob.com","password":"bob!"}' http://127.0.0.1:5000/CreateUser
 @app.route('/CreateUser', methods=['POST'])
@@ -128,8 +137,7 @@ def post_create_submission():
 	if cursor.rowcount > 0:
 		return "APPLICANT ALREADY EXISTS\n"
 
-	cursor.execute("INSERT INTO Applicants ( user_id, post_id ) VALUES ( %s, %s )", [userId, postId])
-	mysql.connection.commit()
+	cursor.execute("INSERT INTO Applicants ( user_id, post_id, status) VALUES ( %s, %s, 'PENDING' )", [userId, postId])
 	
 	questionCount = 0
 	for answer in data['answers']:
@@ -137,9 +145,9 @@ def post_create_submission():
 		if cursor.rowcount == 0:
 			return "QUESTION DOES NOT EXIST FOR ANSWER #" + (questionCount+1) + "\n"
 		cursor.execute("INSERT INTO Answers ( user_id, post_id, question_id, answer ) VALUES ( %s, %s, %s, %s )", [userId, postId, questionCount, answer])
-		mysql.connection.commit()
 		questionCount = questionCount + 1
 
+	mysql.connection.commit()
 
 	return "Success!\n"
 
@@ -164,7 +172,6 @@ def post_create_posting():
 		return "Posting ALREADY EXISTS\n"
 	
 	cursor.execute("INSERT INTO Postings ( org_id, name, status, description ) VALUES ( %s, %s, %s, %s )", [orgId, data['pos_name'], "OPEN", data['description']])
-	mysql.connection.commit()
 	cursor.execute("SELECT * FROM Postings WHERE org_id = %s AND name = %s", [orgId, data['pos_name']])
 	results = cursor.fetchall()
 	postId = 0	
@@ -174,11 +181,102 @@ def post_create_posting():
 	questionCount = 0
 	for question in data['questions']:
 		cursor.execute("INSERT INTO Questions ( question_id, post_id, question ) VALUES ( %s, %s, %s )", [ questionCount, postId, question ])
-		mysql.connection.commit()
-		questionCount = questionCount + 1
+		questionCount = questionCount + 1	
+		
+	mysql.connection.commit()
 
 	return "PostingID: " + str(postId) + "\n"
 
+@app.route('/getAllSubmissions', methods=['GET'])
+@cross_origin(origin='*')
+def get_submissions():
+	'''
+		get all submissions for a given user
+		{
+			email // user_id only requirement
+
+		}
+
+		format sent back of type
+
+		{
+			user_id // email
+			[ 
+				{
+					post_id,
+					org_id,
+					status,
+				}
+			
+			]
+
+		}
+	'''
+
+	data = request.get_json()
+	cursor = mysql.connection.cursor()
+
+	cursor.execute("SELECT user_id from users where email = %s", [data['email']])
+	if cursor.rowcount == 0:
+		return "Invalid email"
+
+	user_id = cursor.fetchone()
+
+	return_data = {}
+	cursor.execute("SELECT post_id, org_id, status FROM applicants where user_id = %s", [user_id])
+	results = cursor.fetchall()
+	for row in results:
+		print("temp")
+
+
+	return "submissions retrieved!" 
+
+@app.route('/updateApplicant', methods=['POST'])
+@cross_origin(origin='*')
+def update_applicant():
+	data = request.get_json()
+
+	'''
+		presumably the json format will be something along the lines of 
+		{
+			email // user_id
+			posting id
+			decision == 'INTERVIEW/ACCEPT/REJECT'
+
+
+		}
+
+	'''
+
+	cursor = mysql.connection.cursor()
+
+	if (data['status'] not in ['INTERVIEW', 'ACCEPT', 'REJECT']):
+		return "invalid status update"
+
+	cursor.execute("SELECT user_id FROM users where email = %s", [data['email']])
+	results = cursor.fetchall()
+
+	if (cursor.rowcount == 0):
+		return "user does not exist"
+	user_id = results[0]
+	#get user_id based off of the email and posting
+	cursor.execute("UPDATE applicants SET status = %s \
+				    WHERE user_id = %s AND post_id = %s", [data['status'], user_id, data['post_id']])
+	results = cursor.fetchall()
+
+	# if the applicant has been accepted we add them to the members list
+	if (data['status'] == 'ACCEPT'):
+		cursor.execute("SELECT org_id FROM postings WHERE post_id = %s ", [data['post_id']])
+		if (cursor.rowcount != 1):
+			return "Error invalid org"
+		orgs = cursor.fetchone()
+
+		cursor.execute("INSERT INTO members ( user_id, org_id) VALUES (%s, %s)", [user_id, data['post_id']])
+
+
+	mysql.connection.commit()
+
+	return "applicant updated"
 
 @app.route('/getOrganizationInfo', methods=['GET'])
 @cross_origin(origin='*')
