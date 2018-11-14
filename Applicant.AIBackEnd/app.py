@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_mysqldb import MySQL
 from flask_restful import Resource, Api
 from flask_cors import CORS, cross_origin
+import sh
 
 #Flask and MySQL setup
 application = app = Flask(__name__)
@@ -96,13 +97,36 @@ def post_create_user():
 		retId = row[0]
 	return "UserID: " + str(retId) + "\n"
 
-#curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","email":"bob@bob.dcom","pos_name":"Best Friend","answers":["need a friend", "im 6 feet tall", "seems like we would be a good fit"]}' http://127.0.0.1:5000/CreateSubmission
+#curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","email":"bob@bob.dcom","pos_name":"Best Friend","answers":["need a friend", "im 6 feet tall", "seems like we would be a good fit", "123"],"answers_ML":[[7,2],[-1,-1],[8,5],[-2, 123]]}' http://127.0.0.1:5000/CreateSubmission
+
+# Answers_ML explanation:
+# The answers_ML value is a list of lists (more like list of tuples). The first number in each inner list represents the size of the list of choices in a dropdown field.
+# The second number represents the index of the choice that was chosen. If the field is a text field, set both numbers to -1. If the field is an integer field, set the 
+# first number to -2 and the second number to the integer value.
 @app.route('/CreateSubmission', methods=['POST'])
 @cross_origin(origin='*')
 def post_create_submission():
 	data = request.get_json()
 	cursor = mysql.connection.cursor()
 
+    if not os.path.isdir("mldata/"):
+        os.mkdir("mldata/")
+    
+    with open('mldata/run_data.txt', 'w') as f:
+        data_len = len(data['answers_ML'])
+        f.write(','+str(data_len))
+        for answer in data['answers_ML']:
+            code = answer[0]
+            val = answer[0]
+            if code != -1:
+                if code > 0:
+                    options = [0] * code
+                    options[val] = 1
+                elif code == -2:
+                    options = [val]
+            for choice in options:
+                f.write(','+str(choice))    
+            
 	#get User id:
 	cursor.execute("SELECT * FROM Users WHERE email = %s", [data["email"]])
 	results = cursor.fetchall()
@@ -396,3 +420,4 @@ def get_all_org_info():
 
 if __name__ == '__main__':
 	app.run(debug=True)
+
