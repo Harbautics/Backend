@@ -73,8 +73,8 @@ public:
 		double eta,
 		double lambda = 0.0,
 		std::vector<inout> &evaluation_data = std::vector<inout>(),
-		bool monitor_evaluation_cost = true,
-		bool monitor_evaluation_accuracy = true,
+		bool monitor_evaluation_cost = false,
+		bool monitor_evaluation_accuracy = false,
 		bool monitor_training_cost = true,
 		bool monitor_training_accuracy = true
 	) {

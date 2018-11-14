@@ -2,7 +2,7 @@
 #define LOAD_MNIST_H
 
 //#define DATA_SIZE 784
-#define LBL_SIZE 1
+#define LBL_SIZE 2
 
 #include <iostream>
 #include <fstream>
@@ -118,8 +118,14 @@ void load_data(string dataFile, string lblFile, int &numApplicants, /*int DataOf
 			//file2.read((char*)&temp, sizeof(temp));
 			//double label = (double)temp;
 			//int index = (int)temp;
-			if (index) { lbl[i].insert(0, 0) = 1.0; }
-			else { lbl[i].insert(0, 0) = 0.0; }
+			for (int j = 0; j < LBL_SIZE; ++j) {
+				if (index == j) { 
+					lbl[i].insert(j, 0) = 1.0; 
+				}
+				else { 
+					lbl[i].insert(j, 0) = 0.0; 
+				}
+			}
 		}
 	}
 }
