@@ -2,7 +2,9 @@ from flask import Flask, request, jsonify
 from flask_mysqldb import MySQL
 from flask_restful import Resource, Api
 from flask_cors import CORS, cross_origin
-import sh
+
+import os
+#import sh
 
 #Flask and MySQL setup
 application = app = Flask(__name__)
@@ -109,24 +111,26 @@ def post_create_submission():
 	data = request.get_json()
 	cursor = mysql.connection.cursor()
 
-    if not os.path.isdir("mldata/"):
-        os.mkdir("mldata/")
+	
+	if not os.path.isdir("mldata/"):
+		os.mkdir("mldata/")
     
-    with open('mldata/run_data.txt', 'w') as f:
-        data_len = len(data['answers_ML'])
-        f.write(','+str(data_len))
-        for answer in data['answers_ML']:
-            code = answer[0]
-            val = answer[0]
-            if code != -1:
-                if code > 0:
-                    options = [0] * code
-                    options[val] = 1
-                elif code == -2:
-                    options = [val]
-            for choice in options:
-                f.write(','+str(choice))    
-            
+	with open('mldata/run_data.txt', 'w') as f:
+		data_len = len(data['answers_ML'])
+		f.write(','+str(data_len))
+		for answer in data['answers_ML']:
+			code = answer[0]
+			val = answer[0]
+			if code != -1:
+				if code > 0:
+					options = [0] * code
+					options[val] = 1
+				elif code == -2:
+					options = [val]
+			for choice in options:
+				f.write(','+str(choice))    
+
+
 	#get User id:
 	cursor.execute("SELECT * FROM Users WHERE email = %s", [data["email"]])
 	results = cursor.fetchall()
@@ -214,28 +218,7 @@ def post_create_posting():
 @app.route('/getAllSubmissions', methods=['GET'])
 @cross_origin(origin='*')
 def get_submissions():
-	'''
-		get all submissions for a given user
-		{
-			email // user_id only requirement
-
-		}
-
-		format sent back of type
-
-		{
-			user_id // email
-			[ 
-				{
-					post_id,
-					org_id,
-					status,
-				}
-			
-			]
-
-		}
-	'''
+	
 
 	data = request.get_json()
 	cursor = mysql.connection.cursor()
@@ -247,34 +230,45 @@ def get_submissions():
 	user_id = cursor.fetchone()
 
 	return_data = {}
-	cursor.execute("SELECT post_id, org_id, status FROM applicants where user_id = %s", [user_id])
+	return_data['user_id'] = user_id
+	return_data['submissions'] = []
+	cursor.execute("SELECT a.post_id, a.status, p.org_id FROM applicants a, postings p WHERE a.user_id = %s \
+				    AND p.post_id = a.post_id", [user_id])
 	results = cursor.fetchall()
+
+	i = 0
+
+	# for every submission to a posting this user has made,
+	# provide the list of all questions/responses 
 	for row in results:
-		print("temp")
+		return_data['submissions'].append({})
+		return_data['submissions'][i]['post_id'] = row[0]
+		return_data['submissions'][i]['status'] = row[1]
+		return_data['submissions'][i]['org_id'] = row[2]
+
+		cursor.execute("SELECT q.question_id, q.question, a.answer FROM questions q, answers a \
+							WHERE q.question_id = a.question_id \
+							AND a.post_id = q.post_id \
+							AND a.post_id = %s \
+							AND a.user_id = %s", [row[0], user_id])
+		responses = cursor.fetchone()
+		return_data['submissions'][i]['responses'] = {}
+		return_data['submissions'][i]['responses']['question_id'] = responses[0]
+		return_data['submissions'][i]['responses']['question'] = responses[1]
+		return_data['submissions'][i]['responses']['answer'] = responses[2]
+		i += 1
 
 
-	return "submissions retrieved!" 
+	return jsonify(return_data) 
 
 @app.route('/updateApplicant', methods=['POST'])
 @cross_origin(origin='*')
 def update_applicant():
 	data = request.get_json()
 
-	'''
-		presumably the json format will be something along the lines of 
-		{
-			email // user_id
-			posting id
-			decision == 'INTERVIEW/ACCEPT/REJECT'
-
-
-		}
-
-	'''
-
 	cursor = mysql.connection.cursor()
 
-	if (data['status'] not in ['INTERVIEW', 'ACCEPT', 'REJECT']):
+	if (data['status'] not in ['INTERVIEW', 'ACCEPT', 'REJECT', 'PENDING']):
 		return "invalid status update"
 
 	cursor.execute("SELECT user_id FROM users where email = %s", [data['email']])
@@ -294,8 +288,10 @@ def update_applicant():
 		if (cursor.rowcount != 1):
 			return "Error invalid org"
 		orgs = cursor.fetchone()
+		cursor.execute("SELECT * FROM members where user_id = %s AND org_id = %s", [user_id, orgs])
+		if (cursor.rowcount == 0):
+			cursor.execute("INSERT INTO members ( user_id, org_id) VALUES (%s, %s)", [user_id, orgs])
 
-		cursor.execute("INSERT INTO members ( user_id, org_id) VALUES (%s, %s)", [user_id, data['post_id']])
 
 
 	mysql.connection.commit()
