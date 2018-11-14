@@ -32,6 +32,21 @@ app.config['MYSQL_HOST'] = 'aa5mho3pd0cv71.czzaljfmuz2x.us-east-2.rds.amazonaws.
 app.config['MYSQL_PORT'] = 3306
 mysql.init_app(app)
 
+@app.route('/test/removal', methods=['POST'])
+@cross_origin(origin='*')
+def drop_all_rows():
+	cursor = mysql.connection.cursor()
+	cursor.execute("DELETE FROM Answers")
+	cursor.execute("DELETE FROM Questions")
+	cursor.execute("DELETE FROM Applicants")
+	cursor.execute("DELETE FROM Postings")
+	cursor.execute("DELETE FROM Organizations")
+	cursor.execute("DELETE FROM Users")
+	mysql.connection.commit()
+
+	return "Cleaned!!"
+
+
 #curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","description":"This is Bobs club"}' http://127.0.0.1:5000/CreateOrg
 @app.route('/CreateOrg', methods=['POST'])
 @cross_origin(origin='*')
