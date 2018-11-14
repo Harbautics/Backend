@@ -55,7 +55,7 @@ CREATE TABLE Answers (
 CREATE TABLE Applicants (
 	user_id BIGINT NOT NULL,
 	post_id BIGINT NOT NULL,
-	status ENUM('PENDING', 'INTERVIEW', 'ACCEPT', 'REJECT),
+	status ENUM('PENDING', 'INTERVIEW', 'ACCEPT', 'REJECT'),
 	FOREIGN KEY (post_id) REFERENCES Postings(post_id),
 	FOREIGN KEY (user_id) REFERENCES Users(user_id),
 	PRIMARY KEY (post_id, user_id)
