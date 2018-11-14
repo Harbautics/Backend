@@ -248,7 +248,7 @@ def update_applicant():
 
 	cursor = mysql.connection.cursor()
 
-	if (data['status'] not in ['INTERVIEW', 'ACCEPT', 'REJECT']):
+	if (data['status'] not in ['INTERVIEW', 'ACCEPT', 'REJECT', 'PENDING']):
 		return "invalid status update"
 
 	cursor.execute("SELECT user_id FROM users where email = %s", [data['email']])
@@ -268,8 +268,9 @@ def update_applicant():
 		if (cursor.rowcount != 1):
 			return "Error invalid org"
 		orgs = cursor.fetchone()
-
-		cursor.execute("INSERT INTO members ( user_id, org_id) VALUES (%s, %s)", [user_id, data['post_id']])
+		cursor.execute("SELECT * FROM members where user_id = %s AND org_id = %s", [user_id, orgs])
+		if (cursor.rowcount == 0):
+			cursor.execute("INSERT INTO members ( user_id, org_id) VALUES (%s, %s)", [user_id, orgs])
 
 
 	mysql.connection.commit()
