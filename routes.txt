@@ -1,7 +1,17 @@
 needed routes and information related to them
 --------------------------
 
-createPosting
+getOrganizationInfo
+{
+	n/a
+}
+
+getAllSubmissions
+{
+	email
+}
+
+CreatePosting
 {
 	email
 	org_name
@@ -17,7 +27,7 @@ updateApplicant
 	status
 }
 
-createSubmission
+CreateSubmission
 {	
 	//requires:
 	email
@@ -32,7 +42,7 @@ CreateOrg
 	(description)
 }
 
-createuser
+CreateUser
 {
 	name
 	email
