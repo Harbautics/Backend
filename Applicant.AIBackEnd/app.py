@@ -267,7 +267,7 @@ def get_submissions():
 	return_data = {}
 	return_data['user_id'] = user_id
 	return_data['submissions'] = []
-	cursor.execute("SELECT a.post_id, a.status, p.org_id FROM Applicants a, Postings p WHERE a.user_id = %s \
+	cursor.execute("SELECT a.post_id, a.status, p.org_id, p.name FROM Applicants a, Postings p WHERE a.user_id = %s \
 				    AND p.post_id = a.post_id", [user_id])
 	results = cursor.fetchall()
 
@@ -280,6 +280,7 @@ def get_submissions():
 		return_data['submissions'][i]['post_id'] = row[0]
 		return_data['submissions'][i]['status'] = row[1]
 		return_data['submissions'][i]['org_id'] = row[2]
+		return_data['submissions'][i]['post_name'] = row[3]
 
 		cursor.execute("SELECT q.question_id, q.question, a.answer FROM Questions q, Answers a \
 							WHERE q.question_id = a.question_id \
