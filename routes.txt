@@ -1,5 +1,14 @@
 needed routes and information related to them
 --------------------------
+getApplicantsFromPosting
+{
+	org_name
+	pos_name
+}
+getOrganizationInfoFromEmail
+{
+	email
+}
 
 getOrganizationInfo
 {
@@ -23,7 +32,7 @@ add applicant to members table for org
 updateApplicant
 {
 	email
-	pos_name
+	post_id
 	status
 }
 
