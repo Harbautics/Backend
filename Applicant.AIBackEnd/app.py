@@ -248,7 +248,7 @@ def post_create_posting():
 	retIdData["PostingId"] = postId
 	return jsonify(retIdData), 200
 
-@app.route('/getAllSubmissions', methods=['GET'])
+@app.route('/getAllSubmissions', methods=['POST'])
 @cross_origin(origin='*')
 def get_submissions():
 	
@@ -393,7 +393,7 @@ def get_all_org_info():
 	return jsonify(data)
 
 
-@app.route('/getOrganizationInfoFromEmail', methods=['GET'])
+@app.route('/getOrganizationInfoFromEmail', methods=['POST'])
 @cross_origin(origin='*')
 def get_all_org_info_by_email():
 	cursor = mysql.connection.cursor()
@@ -442,7 +442,7 @@ def get_all_org_info_by_email():
 
 
 
-@app.route('/getApplicantsFromPosting', methods=['GET'])
+@app.route('/getApplicantsFromPosting', methods=['POST'])
 @cross_origin(origin='*')
 def get_applicant_from_posting():
 	data = request.get_json()
