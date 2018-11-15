@@ -1,6 +1,7 @@
 CREATE TABLE Organizations (
 	org_id BIGINT NOT NULL AUTO_INCREMENT,
-	name VARCHAR(40) UNIQUE,
+	name VARCHAR(50) UNIQUE,
+	email VARCHAR(50),
 	description VARCHAR(200),
 	PRIMARY KEY (org_id)
 );
@@ -55,6 +56,7 @@ CREATE TABLE Answers (
 CREATE TABLE Applicants (
 	user_id BIGINT NOT NULL,
 	post_id BIGINT NOT NULL,
+	status ENUM('ACCEPT', 'REJECT', 'INTERVIEW', 'PENDING'),
 	FOREIGN KEY (post_id) REFERENCES Postings(post_id),
 	FOREIGN KEY (user_id) REFERENCES Users(user_id),
 	PRIMARY KEY (post_id, user_id)
