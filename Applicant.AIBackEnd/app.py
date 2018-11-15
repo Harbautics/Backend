@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_mysqldb import MySQL
 from flask_restful import Resource, Api
 from flask_cors import CORS, cross_origin
+from random import random
 
 import os
 #import sh
@@ -44,11 +45,14 @@ def drop_all_rows():
 	cursor.execute("DELETE FROM Questions")
 	cursor.execute("DELETE FROM Applicants")
 	cursor.execute("DELETE FROM Postings")
+	cursor.execute("DELETE FROM Members")
 	cursor.execute("DELETE FROM Organizations")
 	cursor.execute("DELETE FROM Users")
 	mysql.connection.commit()
 
-	return "Success"
+	retIdData = {}
+	retIdData["message"] = "SUCCESS!"
+	return jsonify(retIdData), 400
 
 #curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","description":"This is Bobs club", "email":"bob@bob.com"}' http://127.0.0.1:5000/CreateOrg
 @app.route('/CreateOrg', methods=['POST'])
@@ -59,7 +63,9 @@ def post_create_org():
 
 	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
 	if cursor.rowcount > 0:
-		return "ORG ALREADY EXISTS\n"
+		retIdData = {}
+		retIdData["message"] = "ORG ALREADY EXISTS"
+		return jsonify(retIdData), 400
 
 	cursor.execute("INSERT INTO Organizations ( name, description, email ) VALUES ( %s, %s, %s )", [data['org_name'], data['description'], data['email']])
 	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
@@ -71,13 +77,14 @@ def post_create_org():
 	cursor.execute("SELECT user_id FROM Users WHERE email = %s", [data['email']])
 	results = cursor.fetchall()
 	if cursor.rowcount == 0:
-		return "email dne in records"
+		retIdData = {}
+		retIdData["message"] = "email dne in records"
+		return jsonify(retIdData), 400
 
 	cursor.execute("INSERT INTO Members (user_id, org_id) VALUES ( %s, %s )", [results[0], retId])
 	mysql.connection.commit()
 
 	retIdData = {}
-	print("RetId: ", retId)
 	retIdData["OrganizationId"] = retId
 	return jsonify(retIdData), 200
 
@@ -91,7 +98,9 @@ def post_create_user():
 	
 	cursor.execute("SELECT * FROM Users WHERE email = %s", [data["email"]])
 	if cursor.rowcount > 0:
-		return "EMAIL ALREADY EXISTS\n"
+		retIdData = {}
+		retIdData["message"] = "EMAIL ALREADY EXISTS"
+		return jsonify(retIdData), 400
 
 	cursor.execute("INSERT INTO Users ( name, email, password ) VALUES ( %s, %s, %s )", [data['name'], data['email'], data['password']])
 	mysql.connection.commit()
@@ -100,7 +109,9 @@ def post_create_user():
 	retId = 0	
 	for row in results:
 		retId = row[0]
-	return "UserID: " + str(retId) + "\n"
+	retIdData = {}
+	retIdData["UserId"] = retId
+	return jsonify(retIdData), 200
 
 #curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","email":"bob@bob.dcom","pos_name":"Best Friend","answers":["need a friend", "im 6 feet tall", "seems like we would be a good fit", "123"],"answers_ML":[[7,2],[-1,-1],[8,5],[-2, 123]]}' http://127.0.0.1:5000/CreateSubmission
 
@@ -115,7 +126,7 @@ def post_create_submission():
 	cursor = mysql.connection.cursor()
 
 	
-	if not os.path.isdir("mldata/"):
+	'''if not os.path.isdir("mldata/"):
 		os.mkdir("mldata/")
     
 	with open('mldata/run_data.txt', 'w') as f:
@@ -131,7 +142,7 @@ def post_create_submission():
 				elif code == -2:
 					options = [val]
 			for choice in options:
-				f.write(','+str(choice))    
+				f.write(','+str(choice)) '''   
 
 
 	#get User id:
@@ -142,7 +153,9 @@ def post_create_submission():
 		userId = row[0]
 	
 	if userId == -1:
-		return "USER NOT FOUND\n"
+		retIdData = {}
+		retIdData["message"] = "USER NOT FOUND"
+		return jsonify(retIdData), 400
 	
 	#get org id
 	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
@@ -152,7 +165,9 @@ def post_create_submission():
 		orgId = row[0]
 
 	if orgId == -1:
-		return "ORG NOT FOUND\n"
+		retIdData = {}
+		retIdData["message"] = "ORG NOT FOUND"
+		return jsonify(retIdData), 400
 
 	#get post id
 	cursor.execute("SELECT * FROM Postings WHERE org_id = %s AND name = %s", [orgId, data['pos_name']])
@@ -162,11 +177,15 @@ def post_create_submission():
 		postId = row[0]
 
 	if postId == -1:
-		return "POST NOT FOUND\n"
+		retIdData = {}
+		retIdData["message"] = "POST NOT FOUND"
+		return jsonify(retIdData), 400
 
 	cursor.execute("SELECT * FROM Applicants WHERE user_id = %s AND post_id = %s", [userId, postId])
 	if cursor.rowcount > 0:
-		return "APPLICANT ALREADY EXISTS\n"
+		retIdData = {}
+		retIdData["message"] = "APPLICANT ALREADY EXISTS"
+		return jsonify(retIdData), 400
 
 	cursor.execute("INSERT INTO Applicants ( user_id, post_id, status) VALUES ( %s, %s, 'PENDING' )", [userId, postId])
 	
@@ -174,13 +193,18 @@ def post_create_submission():
 	for answer in data['answers']:
 		cursor.execute("SELECT * FROM Questions WHERE post_id = %s AND question_id = %s", [postId, questionCount])
 		if cursor.rowcount == 0:
-			return "QUESTION DOES NOT EXIST FOR ANSWER #" + (questionCount+1) + "\n"
+			retIdData = {}
+			s = "QUESTION DOES NOT EXIST FOR ANSWER # " + str(questionCount+1)
+			retIdData["message"] = s
+			return jsonify(retIdData), 400
 		cursor.execute("INSERT INTO Answers ( user_id, post_id, question_id, answer ) VALUES ( %s, %s, %s, %s )", [userId, postId, questionCount, answer])
 		questionCount = questionCount + 1
 
 	mysql.connection.commit()
-
-	return "Success!\n"
+	
+	retData = {}
+	retData["message"] = "Success!"
+	return jsonify(retData), 200
 
 #ASSUMES ORG EXISTS
 #curl --request POST -H "Content-Type: application/json" -d '{"org_name":"BobsClub","pos_name":"Best Friend","description":"need friend","questions":["Why are you a good fit for this friendship?", "Tell me anything", "Anything else?"]}' http://127.0.0.1:5000/CreatePosting
@@ -196,11 +220,15 @@ def post_create_posting():
 	for row in results:
 		orgId = row[0]
 	if orgId == -1:
-		return "ORG NOT FOUND!\n"
+		retIdData = {}
+		retIdData["message"] = "ORG NOT FOUND"
+		return jsonify(retIdData), 400
 	
 	cursor.execute("SELECT * FROM Postings WHERE org_id = %s AND name = %s", [orgId, data['pos_name']])
 	if cursor.rowcount > 0:
-		return "Posting ALREADY EXISTS\n"
+		retIdData = {}
+		retIdData["message"] = "POSTING ALREADY EXISTS"
+		return jsonify(retIdData), 400
 	
 	cursor.execute("INSERT INTO Postings ( org_id, name, status, description ) VALUES ( %s, %s, %s, %s )", [orgId, data['pos_name'], "OPEN", data['description']])
 	cursor.execute("SELECT * FROM Postings WHERE org_id = %s AND name = %s", [orgId, data['pos_name']])
@@ -216,7 +244,9 @@ def post_create_posting():
 		
 	mysql.connection.commit()
 
-	return "PostingID: " + str(postId) + "\n"
+	retIdData = {}
+	retIdData["PostingId"] = postId
+	return jsonify(retIdData), 200
 
 @app.route('/getAllSubmissions', methods=['GET'])
 @cross_origin(origin='*')
@@ -228,7 +258,9 @@ def get_submissions():
 
 	cursor.execute("SELECT user_id from Users where email = %s", [data['email']])
 	if cursor.rowcount == 0:
-		return "Invalid email"
+		retIdData = {}
+		retIdData["message"] = "INVALID EMAIL"
+		return jsonify(retIdData), 400
 
 	user_id = cursor.fetchone()
 
@@ -272,13 +304,17 @@ def update_applicant():
 	cursor = mysql.connection.cursor()
 
 	if (data['status'] not in ['INTERVIEW', 'ACCEPT', 'REJECT', 'PENDING']):
-		return "invalid status update\n"
+		retIdData = {}
+		retIdData["message"] = "INVALID STATUS UPDATE"
+		return jsonify(retIdData), 400
 
 	cursor.execute("SELECT user_id FROM Users where email = %s", [data['email']])
 	results = cursor.fetchall()
 
 	if (cursor.rowcount == 0):
-		return "user does not exist\n"
+		retIdData = {}
+		retIdData["message"] = "USER NOT FOUND"
+		return jsonify(retIdData), 400
 	user_id = results[0]
 	#get user_id based off of the email and posting
 	cursor.execute("UPDATE Applicants SET status = %s \
@@ -289,7 +325,9 @@ def update_applicant():
 	if (data['status'] == 'ACCEPT'):
 		cursor.execute("SELECT org_id FROM Postings WHERE post_id = %s ", [data['post_id']])
 		if (cursor.rowcount != 1):
-			return "Error invalid org"
+			retIdData = {}
+			retIdData["message"] = "ERROR: INVALID ORG"
+			return jsonify(retIdData), 400
 		orgs = cursor.fetchone()
 		cursor.execute("SELECT * FROM Members where user_id = %s AND org_id = %s", [user_id, orgs])
 		if (cursor.rowcount == 0):
@@ -299,9 +337,63 @@ def update_applicant():
 
 	mysql.connection.commit()
 
-	return "applicant updated\n"
+	retIdData = {}
+	retIdData["message"] = "APPLICATION UPDATED!"
+	return jsonify(retIdData), 400
 
-@app.route('/getOrganizationInfoFromEmail', methods=['POST'])
+@app.route('/getOrganizationInfo', methods=['GET'])
+@cross_origin(origin='*')
+def get_all_org_info():
+	cursor = mysql.connection.cursor()
+	data = { 
+		"user" : {
+			"name" : "bob",
+			"id:" : 10,
+			"password" : "hhhh",
+			"email" : "i@bob.com"
+		},
+		"organizations": [
+
+		]
+	}
+	
+	cursor.execute("SELECT * FROM Organizations", [])
+	results = cursor.fetchall()
+	for row in results:
+		print(row)
+		orgData = {}
+		orgData["name"] = row[1]
+		orgData["id"] = row[0]
+		orgData["members"] = []
+		cursor.execute("SELECT m.user_id, u.name, u.email FROM Members m, Users u WHERE m.org_id = %s AND m.user_id = u.user_id", [row[0]])
+		memberResults = cursor.fetchall()
+		for mr in memberResults:
+			memberData = {}
+			memberData["id"] = mr[0]
+			memberData["name"] = mr[1]
+			memberData["email"] = mr[2]
+			orgData["members"].append(memberData)
+		orgData["postings"] = []
+		cursor.execute("SELECT * FROM Postings WHERE org_id = %s", [row[0]])
+		innerResults = cursor.fetchall()
+		for innerRow in innerResults:
+			postData = {}
+			postData["id"] = innerRow[0]
+			postData["name"] = innerRow[2]
+			postData["status"] = innerRow[3]
+			postData["description"] = innerRow[4]
+			postData["questions"] = []
+			cursor.execute("SELECT * FROM Questions WHERE post_id = %s", [innerRow[0]])
+			questionResults = cursor.fetchall()
+			for questionRow in questionResults:
+				postData["questions"].append(questionRow[2])
+			orgData["postings"].append(postData)
+		data["organizations"].append(orgData)
+	
+	return jsonify(data)
+
+
+@app.route('/getOrganizationInfoFromEmail', methods=['GET'])
 @cross_origin(origin='*')
 def get_all_org_info_by_email():
 	cursor = mysql.connection.cursor()
@@ -319,10 +411,15 @@ def get_all_org_info_by_email():
 		orgData = {}
 		orgData["name"] = row[1]
 		orgData["id"] = row[0]
-		orgData["members"] = [ 
-			      { "id" : 1, "name" : "thomas" },
-					  { "id" : 2, "name" : "troy" }
-					]
+		orgData["members"] = []
+		cursor.execute("SELECT m.user_id, u.name, u.email FROM Members m, Users u WHERE m.org_id = %s AND m.user_id = u.user_id", [row[0]])
+		memberResults = cursor.fetchall()
+		for mr in memberResults:
+			memberData = {}
+			memberData["id"] = mr[0]
+			memberData["name"] = mr[1]
+			memberData["email"] = mr[2]
+			orgData["members"].append(memberData)
 		orgData["postings"] = []
 		cursor.execute("SELECT * FROM Postings WHERE org_id = %s", [row[0]])
 		innerResults = cursor.fetchall()
@@ -345,7 +442,7 @@ def get_all_org_info_by_email():
 
 
 
-@app.route('/getApplicantsFromPosting', methods=['POST'])
+@app.route('/getApplicantsFromPosting', methods=['GET'])
 @cross_origin(origin='*')
 def get_applicant_from_posting():
 	data = request.get_json()
@@ -359,7 +456,9 @@ def get_applicant_from_posting():
 		orgId = row[0]
 
 	if orgId == -1:
-		return "ORG NOT FOUND\n"
+		retIdData = {}
+		retIdData["message"] = "ORG NOT FOUND"
+		return jsonify(retIdData), 400
 
 	#get post id
 	cursor.execute("SELECT * FROM Postings WHERE org_id = %s AND name = %s", [orgId, data['pos_name']])
@@ -369,7 +468,9 @@ def get_applicant_from_posting():
 		postId = row[0]
 
 	if postId == -1:
-		return "POST NOT FOUND\n"
+		retIdData = {}
+		retIdData["message"] = "POST NOT FOUND"
+		return jsonify(retIdData), 400
 	
 	
 	cursor.execute("SELECT * FROM Applicants WHERE post_id = %s", [postId])
@@ -388,6 +489,7 @@ def get_applicant_from_posting():
 			userData["name"] = ur[1]
 			userData["email"] = ur[2]
 		applicantData["userInfo"] = userData
+		applicantData["perc_match"] = round(random()*10000)/100.0
 		
 		cursor.execute("SELECT * FROM Answers WHERE user_id = %s AND post_id = %s", [userId, postId])
 		answerResults = cursor.fetchall()
