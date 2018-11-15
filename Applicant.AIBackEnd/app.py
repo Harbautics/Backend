@@ -287,11 +287,16 @@ def get_submissions():
 							AND a.post_id = q.post_id \
 							AND a.post_id = %s \
 							AND a.user_id = %s", [row[0], user_id])
-		responses = cursor.fetchone()
-		return_data['submissions'][i]['responses'] = {}
-		return_data['submissions'][i]['responses']['question_id'] = responses[0]
-		return_data['submissions'][i]['responses']['question'] = responses[1]
-		return_data['submissions'][i]['responses']['answer'] = responses[2]
+		responses = cursor.fetchall()
+
+		return_data['submissions'][i]['responses'] = []
+
+		for res in responses:
+			qa = {}
+			qa['question_id'] = res[0]
+			qa['question'] = res[1]
+			qa['answer'] = res[2]
+			return_data['submissions'][i]['responses'].append(qa)
 		i += 1
 
 
