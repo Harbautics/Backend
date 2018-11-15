@@ -1,49 +1,41 @@
 needed routes and information related to them
 --------------------------
 
-create/deletePosting
+createPosting
 {
-	username
-	password
-	organization name
-	position name
-	description
-}
-
-//remove applicant from applicants table
-//potentially add applicant to members table for org
-decideApplicant
-{
-	username
-	password
-	org_name
-	position
-	decision
-}
-
-create/deleteSubmission
-{
-	username
-	password
-	org_name
-	posting_id
-	answers []
-}
-
-Create/deleteOrg
-{
-	"username": " ",
-	"password" : " ",
-	"org_name" : " ",
-	"description" : ""
-}
-
-create/deleteUser
-{
-	username
-	password
 	email
-	password
+	org_name
+	pos_name
+	questions[]
+}
+
+add applicant to members table for org
+updateApplicant
+{
+	email
+	pos_name
+	status
+}
+
+createSubmission
+{	
+	//requires:
+	email
+	org_name
+	pos_name
+}
+
+CreateOrg
+{
+	email
+	org_name
+	(description)
+}
+
+createuser
+{
+	name
+	email
 }
 
 
