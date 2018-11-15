@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 from flask_mysqldb import MySQL
 from flask_restful import Resource, Api
@@ -30,9 +29,9 @@ app.config['MYSQL_PORT'] = 3306
 mysql = MySQL()
 # testing locally
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'mysql'
+app.config['MYSQL_PASSWORD'] = 'sdocs123'
 app.config['MYSQL_DB'] = 'AAIDB'
-app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_HOST'] = 'aa5mho3pd0cv71.czzaljfmuz2x.us-east-2.rds.amazonaws.com'
 app.config['MYSQL_PORT'] = 3306
 mysql.init_app(app)
 
@@ -62,7 +61,7 @@ def post_create_org():
 	if cursor.rowcount > 0:
 		return "ORG ALREADY EXISTS\n"
 
-	cursor.execute("INSERT INTO Organizations ( name, description ) VALUES ( %s, %s )", [data['org_name'], data['description']])
+	cursor.execute("INSERT INTO Organizations ( name, description, email ) VALUES ( %s, %s, %s )", [data['org_name'], data['description'], data['email']])
 	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
 	results = cursor.fetchall()
 	retId = 0
@@ -77,7 +76,10 @@ def post_create_org():
 	cursor.execute("INSERT INTO Members (user_id, org_id) VALUES ( %s, %s )", [results[0], retId])
 	mysql.connection.commit()
 
-	return "OrganizationID: " + str(retId) + "\n"
+	retIdData = {}
+	print("RetId: ", retId)
+	retIdData["OrganizationId"] = retId
+	return jsonify(retIdData), 200
 
 
 #curl --request POST -H "Content-Type: application/json" -d '{"name":"bob bob","email":"bob@bob.com","password":"bob!"}' http://127.0.0.1:5000/CreateUser
@@ -224,7 +226,7 @@ def get_submissions():
 	data = request.get_json()
 	cursor = mysql.connection.cursor()
 
-	cursor.execute("SELECT user_id from users where email = %s", [data['email']])
+	cursor.execute("SELECT user_id from Users where email = %s", [data['email']])
 	if cursor.rowcount == 0:
 		return "Invalid email"
 
@@ -233,7 +235,7 @@ def get_submissions():
 	return_data = {}
 	return_data['user_id'] = user_id
 	return_data['submissions'] = []
-	cursor.execute("SELECT a.post_id, a.status, p.org_id FROM applicants a, postings p WHERE a.user_id = %s \
+	cursor.execute("SELECT a.post_id, a.status, p.org_id FROM Applicants a, Postings p WHERE a.user_id = %s \
 				    AND p.post_id = a.post_id", [user_id])
 	results = cursor.fetchall()
 
@@ -247,7 +249,7 @@ def get_submissions():
 		return_data['submissions'][i]['status'] = row[1]
 		return_data['submissions'][i]['org_id'] = row[2]
 
-		cursor.execute("SELECT q.question_id, q.question, a.answer FROM questions q, answers a \
+		cursor.execute("SELECT q.question_id, q.question, a.answer FROM Questions q, Answers a \
 							WHERE q.question_id = a.question_id \
 							AND a.post_id = q.post_id \
 							AND a.post_id = %s \
@@ -270,52 +272,47 @@ def update_applicant():
 	cursor = mysql.connection.cursor()
 
 	if (data['status'] not in ['INTERVIEW', 'ACCEPT', 'REJECT', 'PENDING']):
-		return "invalid status update"
+		return "invalid status update\n"
 
-	cursor.execute("SELECT user_id FROM users where email = %s", [data['email']])
+	cursor.execute("SELECT user_id FROM Users where email = %s", [data['email']])
 	results = cursor.fetchall()
 
 	if (cursor.rowcount == 0):
-		return "user does not exist"
+		return "user does not exist\n"
 	user_id = results[0]
 	#get user_id based off of the email and posting
-	cursor.execute("UPDATE applicants SET status = %s \
+	cursor.execute("UPDATE Applicants SET status = %s \
 				    WHERE user_id = %s AND post_id = %s", [data['status'], user_id, data['post_id']])
 	results = cursor.fetchall()
 
 	# if the applicant has been accepted we add them to the members list
 	if (data['status'] == 'ACCEPT'):
-		cursor.execute("SELECT org_id FROM postings WHERE post_id = %s ", [data['post_id']])
+		cursor.execute("SELECT org_id FROM Postings WHERE post_id = %s ", [data['post_id']])
 		if (cursor.rowcount != 1):
 			return "Error invalid org"
 		orgs = cursor.fetchone()
-		cursor.execute("SELECT * FROM members where user_id = %s AND org_id = %s", [user_id, orgs])
+		cursor.execute("SELECT * FROM Members where user_id = %s AND org_id = %s", [user_id, orgs])
 		if (cursor.rowcount == 0):
-			cursor.execute("INSERT INTO members ( user_id, org_id) VALUES (%s, %s)", [user_id, orgs])
+			cursor.execute("INSERT INTO Members ( user_id, org_id) VALUES (%s, %s)", [user_id, orgs])
 
 
 
 	mysql.connection.commit()
 
-	return "applicant updated"
+	return "applicant updated\n"
 
-@app.route('/getOrganizationInfo', methods=['GET'])
+@app.route('/getOrganizationInfoFromEmail', methods=['POST'])
 @cross_origin(origin='*')
-def get_all_org_info():
+def get_all_org_info_by_email():
 	cursor = mysql.connection.cursor()
-	data = { 
-		"user" : {
-			"name" : "bob",
-			"id:" : 10,
-			"password" : "hhhh",
-			"email" : "i@bob.com"
-		},
+	inData = request.get_json()
+	data = {
 		"organizations": [
 
 		]
 	}
 	
-	cursor.execute("SELECT * FROM Organizations", [])
+	cursor.execute("SELECT * FROM Organizations WHERE email = %s", [inData['email']])
 	results = cursor.fetchall()
 	for row in results:
 		print(row)
@@ -343,78 +340,70 @@ def get_all_org_info():
 			orgData["postings"].append(postData)
 		data["organizations"].append(orgData)
 	
-
-
-
-
-
-
-	dataTemp = {
-		"user" : {
-			"name" : "bob",
-			"id:" : 10,
-			"password" : "hhhh",
-			"email" : "i@bob.com"
-		},
-		"organizations" : [
-		{
-		 "name": "investing",
-		 "id" : 1,
-		 "members" : [ 
-			      { "id" : 1, "name" : "thomas" },
-					  { "id" : 2, "name" : "troy" }
-					],
-		 "postings" :[{
-			"id": 1,
-			"name" : "consultant",
-			"status" : "open",
-			"description" : "you will tell people how to invest things",
-			"questions" : [ { "question" : "why do you want to consult?", "type": "text", "answers" : [""] },
-				{ "question" : "but really, why?", "type": "text", "answers" : [""] },
-				{ "question" : "years experience?", "type": "dropdown", "answers" : ["some", "absolutely none"] } ]
-
-			,
-			"applicants" : [ {"id" : 3, "name" : "jordan", "answers" : [ "cause fun", "cause really fun", "some"] }]
-
-		}]},
-
-		{
-		 "name": "frat",
-		 "id" : 2,
-		 "members" : [ 
-			      { "id" : 3, "name" : "jordan" },
-					  { "id" : 2, "name" : "troy" }
-					],
-		 "postings" :[{
-			"id": 1,
-			"name" : "frat fellow",
-			"status" : "closed",
-			"description" : "you will do frat things",
-			"questions" : [ { "question" : "why this frat?", "type": "text", "answers" : [""] } ],
-			"applicants" : [ {"id" : 4, "name" : "alexis", "answers" : [ "cause"] },
-							 {"id" : 5, "name" : "matt", "answers" : ["because its my frat"]}]
-
-		}]},
-
-		{
-		 "name": "lonelyville",
-		 "id" : 2,
-		 "members" : [ 
-			      { "id" : 6, "name" : "collin" }
-					],
-		 "postings" :[{
-			"id": 1,
-			"name" : "come say hello",
-			"status" : "open",
-			"description" : "be a friend",
-			"questions" : [ ],
-			"applicants" : []
-
-		}]}
-		]
-	}
 	return jsonify(data)
+
+
+
+
+@app.route('/getApplicantsFromPosting', methods=['POST'])
+@cross_origin(origin='*')
+def get_applicant_from_posting():
+	data = request.get_json()
+	cursor = mysql.connection.cursor()
+	
+	#get org id
+	cursor.execute("SELECT * FROM Organizations WHERE name = %s", [data["org_name"]])
+	results = cursor.fetchall()
+	orgId = -1
+	for row in results:
+		orgId = row[0]
+
+	if orgId == -1:
+		return "ORG NOT FOUND\n"
+
+	#get post id
+	cursor.execute("SELECT * FROM Postings WHERE org_id = %s AND name = %s", [orgId, data['pos_name']])
+	results = cursor.fetchall()
+	postId = -1	
+	for row in results:
+		postId = row[0]
+
+	if postId == -1:
+		return "POST NOT FOUND\n"
+	
+	
+	cursor.execute("SELECT * FROM Applicants WHERE post_id = %s", [postId])
+	results = cursor.fetchall()
+	retData = { "applicants": [] }
+	for applicant in results:
+		userId = applicant[0]
+		status = applicant[2]
+		applicantData = { "status":status }
+		
+		cursor.execute("SELECT * FROM Users WHERE user_id = %s", [userId])
+		userResults = cursor.fetchall()
+		userData = {}
+		for ur in userResults:
+			userData["id"] = userId
+			userData["name"] = ur[1]
+			userData["email"] = ur[2]
+		applicantData["userInfo"] = userData
+		
+		cursor.execute("SELECT * FROM Answers WHERE user_id = %s AND post_id = %s", [userId, postId])
+		answerResults = cursor.fetchall()
+		applicantData["questions"] = []
+		for ar in answerResults:
+			questionId = ar[2]
+			answer = ar[3]
+			question = ""
+			cursor.execute("SELECT * FROM Questions WHERE question_id = %s", [questionId])
+			questionResults = cursor.fetchall()
+			for qr in questionResults:
+				question = qr[2]
+			applicantData["questions"].append({"question":question, "answer":answer})
+		retData["applicants"].append(applicantData)
+	return jsonify(retData)
+		
 
 if __name__ == '__main__':
 	app.run(debug=True)
-
