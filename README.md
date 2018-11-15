@@ -7,81 +7,24 @@ Our backend framework will involve the usage of Python, with Flask and mySQL to 
 │   ├── Driver.cpp
 │   ├── Load_data.h
 │   ├── Network.h
+│   ├── app.py
 │   ├── databaseAPISkeleton.py
-│   └── groupInformationAPI.py
+│   ├── groupInformationAPI.py
+│   └── tableGeneration.sql
 ├── README.md
 ├── base_queries.txt
 ├── json.txt
-└── sql_structure.txt
+├── routes.txt
+├── sql_structure.txt
+└── testingScripts
+    ├── clear.sh
+    ├── getSubmits.sh
+    ├── init.sh
+    ├── org.sh
+    ├── posting.sh
+    ├── submissions.sh
+    ├── updateApp.sh
+    └── user.sh
 ```
 
-Tentative API Routes:
-------------------------------------------------
-
-```
-//single organization
-OrganizationInformation API
-{
-	name,
-	id,
-	members[] {
-		id,
-		name
-	},
-	applications[] {
-		id,
-		name,
-		status,
-		description,
-		users[] {
-			id
-			name,
-		},
-		questions[] {
-			question
-			type, ( can be text entry, dropdown)
-			answers[]: (blank if entry, potential answers otherwise)
-		}
-	}
-}
-
-//add to list
-joinOrg
-//remove from list
-leaveOrg
-	
-//get all orgs for a given user
-getAllOrgs (
-	OrganizationInformation[]
-	
-)
-
-//user submission of appid
-submitApp 
-{
-		appid,
-		name,
-		questions {
-			answers[]
-		}
-}
-
-//all apps for a given user
-getAllApps
-{
-	applications [] {
-		appid,
-		orgname,
-		name,
-		description
-		status,
-		questions[]
-			questions,
-			answer
-	}
-
-}
-```	
-	
-
-
+* Current API Routes can be found in the routes.txt file
