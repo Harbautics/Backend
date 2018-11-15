@@ -1,0 +1,3 @@
+curl --request POST -H "Content-Type: application/json" -d '{"email":"matt@bob.com", "status":"ACCEPT", "post_id":1}' http://127.0.0.1:5000/updateApplicant
+curl --request POST -H "Content-Type: application/json" -d '{"email":"alexis@bob.com", "status":"ACCEPT", "post_id":1}' http://127.0.0.1:5000/updateApplicant
+curl --request POST -H "Content-Type: application/json" -d '{"email":"thom@bob.com", "status":"ACCEPT", "post_id":1}' http://127.0.0.1:5000/updateApplicant
