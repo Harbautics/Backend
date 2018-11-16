@@ -26,6 +26,10 @@ TRAIN:
 		  [lambda | double]
 */
 
+// 5 15 test_data.csv test_lbl.csv out 500 2 1.0 0.1
+// 1 15 test_data.csv test_lbl.csv out 500 1 1.0 0.1
+// out.txt test_data.csv
+
 using namespace std;
 
 class Data {
@@ -52,12 +56,14 @@ public:
 
 	void load() {
 		if (this->is_trained) {
-			//vector<Eigen::SparseMatrix<double>> run_data;
+			vector<Eigen::SparseMatrix<double>> run_data;
 			int numApplicants = 0;
+			
 			load_data(this->run_data_file,
 					  numApplicants,
-					  /*this->data_size,*/
-					  this->data);
+					  run_data);
+			
+			this->data = run_data;
 			this->running_data_size = numApplicants;
 		}
 		else {
@@ -66,13 +72,13 @@ public:
 			int numApplicants = 0;
 			load_data(this->train_data_file,
 					  this->train_label_file,
-					  numApplicants, /*this->data_size,*/ train_data, train_lbl);
+					  numApplicants, train_data, train_lbl);
 			this->training_data_size = numApplicants;
 			load_data(this->test_data_file,
 					  this->test_label_file,
-					  numApplicants, /*this->data_size,*/ test_data, test_lbl);
+					  numApplicants, test_data, test_lbl);
 			this->testing_data_size = numApplicants;
-			for (unsigned i = 0; i < this->testing_data_size; ++i) {
+			for (int i = 0; i < this->testing_data_size; ++i) {
 				train_data[i].makeCompressed();
 				train_lbl[i].makeCompressed();
 				test_data[i].makeCompressed();
@@ -83,7 +89,7 @@ public:
 			test_data.clear();
 			test_lbl.clear();
 
-			for (unsigned i = testing_data_size; i < training_data_size; ++i) {
+			for (int i = testing_data_size; i < training_data_size; ++i) {
 				train_data[i].makeCompressed();
 				train_lbl[i].makeCompressed();
 				this->training.emplace_back(make_pair(move(train_data[i]), move(train_lbl[i])));
@@ -94,19 +100,29 @@ public:
 	}
 
 	void run() {
-		vector<int> layers = { this->input_layer_size, this->hidden_layer_size, 1 };
+		this->input_layer_size = 0;
+		this->input_layer_size = 0;
+		vector<int> layers = { this->input_layer_size, this->hidden_layer_size, 2 };
+		
 		CrossEntropy cost;
 		Classify ot;
+		
 		Network<CrossEntropy, Classify> net(layers, cost, ot);
+		
 		net.input(this->saved_net_file);
+		
 		for (unsigned i = 0; i < this->data.size(); ++i) {
-			Eigen::MatrixXd result = net.feedforward(this->data[i]);
-			cout << result << endl;
+			Eigen::MatrixXd result = net.feedforward_run(this->data[i]);
+			cout << result(0,0);
 		}
+		
 	}
 
 	void train() {
-		vector<int> layers = { this->input_layer_size, this->hidden_layer_size, 1 };
+		vector<int> layers;
+		layers.push_back(this->input_layer_size);
+		layers.push_back(this->hidden_layer_size);
+		layers.push_back(2);
 		CrossEntropy cost;
 		Classify ot;
 		Network<CrossEntropy, Classify> net(layers, cost, ot);
@@ -123,10 +139,6 @@ public:
 	bool is_training() {
 		return !this->is_trained;
 	}
-
-	//void set_all_data(vector<Eigen::SparseMatrix<double>> &data, vector<Eigen::SparseMatrix<double>> &labels) {
-	//	this->
-	//}
 
 private:
 	vector<inout> training;
@@ -146,73 +158,17 @@ private:
 	int running_data_size;
 	int epochs;
 	int mini_batch_size;
-	int learning_rate;
-	int lambda;
+	double learning_rate;
+	double lambda;
 	bool is_trained;
 };
 
-int console_call(int argc, char * argv[], Network<CrossEntropy, Classify> * net);
-
 int main(int argc, char * argv[]) {
-	/*vector<Eigen::SparseMatrix<double>> train_data, train_lbl;
-	vector<Eigen::SparseMatrix<double>> test_data, test_lbl;*/
-	/*vector<inout> training;
-	vector<inout> testing;*/
-
+	
 	Data data(argc, argv);
 
-	/*load_data(train_data_file,
-			  train_label_file,
-			  TRAIN_SIZE, DATA_SIZE, train_data, train_lbl);
-	load_data(test_data_file,
-			  test_label_file,
-			  TEST_SIZE, DATA_SIZE, test_data, test_lbl);*/
-
-	/*pair<Eigen::MatrixXd, Eigen::MatrixXd> train;
-	pair<Eigen::MatrixXd, Eigen::MatrixXd> test;
-	for (unsigned i = 0; i < TEST_SIZE; ++i) {
-		train_data[i].makeCompressed();
-		train_lbl[i].makeCompressed();
-		test_data[i].makeCompressed();
-		test_lbl[i].makeCompressed();
-		//cout << train_lbl[i] << endl;
-		train = make_pair(move(train_data[i]), move(train_lbl[i]));
-		test = make_pair(move(test_data[i]), move(test_lbl[i]));
-		training.emplace_back(move(train));
-		testing.emplace_back(move(test));
-	}
-	test_data.clear();
-	test_lbl.clear();*/
-	//cout << endl;
-	/*for (unsigned i = TEST_SIZE; i < TRAIN_SIZE; ++i) {
-		//train = make_pair(move(train_data[i]), move(train_lbl[i]));
-		training.emplace_back(make_pair(move(train_data[i]), move(train_lbl[i])));
-	}*/
-	cout << "Beginning training\n";
 	data.load();
 	if (data.is_training()) { data.train(); }
 	else { data.run(); }
-	//train_data.clear();
-	//string outfile = "trainedNet.txt";
-	//train_lbl.clear();
-	/*vector<int> layers = { 784,30,10 };
-	CrossEntropy cost;
-	Classify ot;
-	Network<CrossEntropy, Classify> net(layers, cost, ot);
-	net.SGD(training, 30, 100, 0.1, 1.0, testing, true, true, true, true);
-	net.output(outfile);*/
-	cout << endl;
 	return 0;
 }
-
-/*int console_call(int argc, char * argv[], Network<CrossEntropy, Classify> * net) {
-	if (argc == 1) {
-		string data = argv[1];
-		net->input(data);
-
-	}
-	else if (argc == 8) {
-
-	}
-	return 0;
-}*/

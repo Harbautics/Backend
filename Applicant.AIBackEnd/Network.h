@@ -17,6 +17,43 @@
 using inout = std::pair<Eigen::VectorXd, Eigen::VectorXd>;
 using nablas = std::pair<std::vector<Eigen::MatrixXd>, std::vector<Eigen::MatrixXd>>;
 
+
+template <typename T>
+void shuffle(std::vector<T> &vec) {
+	srand((unsigned)time(NULL));
+	for (unsigned i = 0; i < vec.size(); ++i) {
+		int rand_i = rand() % ((int)vec.size() - i);
+		//vec.push_back(vec[rand_i]);
+		std::swap(vec[i], vec[rand_i]);
+	}
+}
+
+
+
+Eigen::MatrixXd dup_cols(const Eigen::VectorXd &mat, int num) {
+	Eigen::MatrixXd result(mat.rows(), num);
+	for (int i = 0; i < num; ++i) {
+		for (int j = 0; j < mat.rows(); ++j) {
+			result(j, i) = mat(j);
+		}
+	}
+	return result;
+}
+
+Eigen::MatrixXd hadamard_prod(Eigen::MatrixXd mat1, const Eigen::MatrixXd &mat2) {
+	assert(mat1.rows() == mat2.rows());
+	assert(mat1.cols() == mat2.cols());
+	int rows = mat1.rows(), cols = mat1.cols();
+	//Eigen::MatrixXd result(rows, cols);
+	for (int i = 0; i < rows; ++i) {
+		for (int j = 0; j < cols; ++j) {
+			mat1(i, j) *= mat2(i, j);
+		}
+	}
+	return mat1;
+}
+
+
 template <typename Cost, typename OutType>
 class Network {
 public:
@@ -34,12 +71,17 @@ public:
 		std::mt19937 e2(rd());
 		std::normal_distribution<> weight_dist(0, stdev);
 		std::normal_distribution<> bias_dist(0, 1);
+
 		weights.reserve(layers.size() - 1);
 		biases.reserve(layers.size() - 1);
+
 		for (unsigned i = 1; i < layers.size(); ++i) {
 			biases.emplace_back(Eigen::VectorXd(layers[i]));
+			
+			
 			for (int j = 0; j < layers[i]; ++j) {
 				biases[i-1](j) = bias_dist(e2);
+				//std::cout << "j: " << j << std::endl;
 			}
 			weights.emplace_back(Eigen::MatrixXd(layers[i], layers[i - 1]));
 			for (int j = 0; j < layers[i]; ++j) {
@@ -50,14 +92,24 @@ public:
 		}
 	}
 
+	Eigen::VectorXd feedforward_run(Eigen::VectorXd a) {
+		
+		for (unsigned i = 0; i < weights.size() - 1; ++i) {
+			a = sigmoid((weights[i] * a) + biases[i]);
+		}
+		SoftMax output;
+		a = output.outputFN((weights[weights.size() - 1] * a) + biases[weights.size() - 1]);
+		return a;
+	}
+
 	Eigen::VectorXd feedforward(Eigen::VectorXd a) {
 		for (unsigned i = 0; i < weights.size() - 1; ++i) {
-			//cout << ((weights[i] * a) + biases[i]) << endl;
+			//std::cout << ((weights[i] * a) + biases[i]) << endl;
 			a = sigmoid((weights[i] * a) + biases[i]);
-			//cout << a << endl;
+			//std::cout << a << endl;
 		}
 		a = ot.outputFN((weights[weights.size() - 1] * a) + biases[weights.size() - 1]);
-		//cout << a << endl;
+		//std::cout << a << endl;
 		return a;
 	}
 
@@ -71,20 +123,19 @@ public:
 		int epochs,
 		int mini_batch_size,
 		double eta,
-		double lambda = 0.0,
-		std::vector<inout> &evaluation_data = std::vector<inout>(),
-		bool monitor_evaluation_cost = true,
-		bool monitor_evaluation_accuracy = true,
+		double lambda,
+		bool monitor_evaluation_cost = false,
+		bool monitor_evaluation_accuracy = false,
 		bool monitor_training_cost = true,
 		bool monitor_training_accuracy = true
 	) {
 		
-		
+		std::vector<inout> evaluation_data = std::vector<inout>();
 		if (!evaluation_data.empty()) { int n_data = (int)evaluation_data.size(); }
 		int n = (int)training_data.size();
 		std::vector<std::vector<inout>> mini_batches;
 		mini_batches.reserve(n / mini_batch_size);
-		int n_data;
+		int n_data=0;
 		if (!evaluation_data.empty()) {
 			n_data = evaluation_data.size();
 		}
@@ -95,24 +146,25 @@ public:
 					training_data.begin() + j + mini_batch_size);
 			}
 			update_mini_batches(eta, lambda, mini_batches, n);
-			cout << "Epoch " << (i + 1) << " training complete\n";
+			std::cout << "Epoch " << (i + 1) << " training complete\n";
 			//monitor_training_accuracy = false;
 			if (monitor_training_accuracy) {
-				cout << "Training data accuracy: " << accuracy(training_data) <<
+				std::cout << "Training data accuracy: " << accuracy(training_data) <<
 					" / " << training_data.size() << "\n";
+				std::cout << "eta: " << eta << std::endl;
 			}
 			if (monitor_evaluation_accuracy) {
-				cout << "Evaluation data accuracy: " << accuracy(evaluation_data) <<
+				std::cout << "Evaluation data accuracy: " << accuracy(evaluation_data) <<
 					" / " << n_data << "\n";
 			}
 			//monitor_training_cost = false;
 			if (monitor_training_cost) {
-				cout << "Training data cost: " << eval_cost(training_data, lambda) << "\n";
+				std::cout << "Training data cost: " << eval_cost(training_data, lambda) << "\n";
 			}
 			if (monitor_evaluation_cost) {
-				cout << "Evaluation data cost: " << eval_cost(evaluation_data, lambda) << "\n";
+				std::cout << "Evaluation data cost: " << eval_cost(evaluation_data, lambda) << "\n";
 			}
-			cout << "\n";
+			std::cout << "\n";
 			mini_batches.clear();
 		}
 	}
@@ -128,7 +180,7 @@ public:
 				biases[i].noalias() = biases[i]-(eta/(int)mini_batch.size())*nabla_w_b.second[i];
 			++j;
 		}
-		eta *= 0.98;
+		eta *= 0.998;
 	}
 
 	void backprop(std::vector<inout> &mini_batch, nablas &nabla_w_b) {
@@ -142,89 +194,89 @@ public:
 		if (X_rows > Y_rows && X_cols > Y_cols) {
 			for (int i = 0; i < Y_rows; ++i) {
 				for (int j = 0; j < Y_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 				}
 				for (int j = Y_cols; j < X_cols; ++j)
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 			}
 			for (int i = Y_rows; i < X_rows; ++i) {
 				for (int j = 0; j < X_cols; ++j) {
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 				}
 			}
 		}
 		else if (X_rows > Y_rows && X_cols == Y_cols) {
 			for (int i = 0; i < Y_rows; ++i) {
 				for (int j = 0; j < X_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 				}
 			}
 			for (int i = Y_rows; i < X_rows; ++i) {
 				for (int j = 0; j < X_cols; ++j) {
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 				}
 			}
 		}
 		else if (X_rows > Y_rows && X_cols < Y_cols) {
 			for (int i = 0; i < Y_rows; ++i) {
 				for (int j = 0; j < X_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 				}
 				for (int j = X_cols; j < Y_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 			}
 			for (int i = Y_rows; i < X_rows; ++i) {
 				for (int j = 0; j < X_cols; ++j) {
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 				}
 			}
 		}
 		else if (X_rows < Y_rows && X_cols > Y_cols) {
 			for (int i = 0; i < X_rows; ++i) {
 				for (int j = 0; j < Y_cols; ++j) {
-					swap(X(i, j), mini_batch[j].first(i));
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 				for (int j = Y_cols; j < X_cols; ++j) {
-					swap(X(i, j), mini_batch[j].first(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
 				}
 			}
 			for (int i = X_rows; i < Y_rows; ++i) {
 				for (int j = 0; j < Y_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 			}
 		}
 		else if (X_rows < Y_rows && X_cols == Y_cols) {
 			for (int i = 0; i < X_rows; ++i) {
 				for (int j = 0; j < X_cols; ++j) {
-					swap(X(i, j), mini_batch[j].first(i));
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 			}
 			for (int i = X_rows; i < Y_rows; ++i) {
 				for (int j = 0; j < Y_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 			}
 		}
 		else {
 			for (int i = 0; i < X_rows; ++i) {
 				for (int j = 0; j < X_cols; ++j) {
-					swap(X(i, j), mini_batch[j].first(i));
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(X(i, j), mini_batch[j].first(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 				for (int j = X_cols; j < Y_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 			}
 			for (int i = X_rows; i < Y_rows; ++i) {
 				for (int j = 0; j < Y_cols; ++j) {
-					swap(Y(i, j), mini_batch[j].second(i));
+					std::swap(Y(i, j), mini_batch[j].second(i));
 				}
 			}
 		}
@@ -242,7 +294,7 @@ public:
 		}
 
 		Eigen::MatrixXd delta = cost.delta(zs[zs.size() - 1], activations[activations.size() - 1], Y);
-		//cout << delta << endl;
+		//std::cout << delta << endl;
 		nabla_w_b.second[nabla_w_b.second.size() - 1] = delta * Eigen::MatrixXd::Ones(delta.cols(), 1);
 		nabla_w_b.first[nabla_w_b.first.size() - 1] = delta * activations[activations.size() - 2].transpose();
 
@@ -268,11 +320,11 @@ public:
 	/*double stockAccuracy(std::vector<inout> &data) {
 		std::vector<std::pair<Eigen::VectorXd, Eigen::VectorXd>> results(data.size());
 		for (unsigned i = 0; i < data.size(); i++) {
-			//cout << data[i].first << ", " << data[i].second << endl;
+			//std::cout << data[i].first << ", " << data[i].second << endl;
 			results[i] = { feedforward(data[i].first), data[i].second };
-			//cout << results[i].first << ", " << results[i].second << endl;
+			//std::cout << results[i].first << ", " << results[i].second << endl;
 		}
-		//cout << endl;
+		//std::cout << endl;
 		double error = 0.0;
 		for (unsigned i = 0; i < results.size(); i++) {
 			for (int j = 0; j < results[i].first.size(); j++)
@@ -299,12 +351,15 @@ public:
 	}
 
 	void input(std::string file) {
+		
 		std::ifstream infile;
 		infile.open(file);
 		infile >> num_layers;
+		weights.resize(num_layers-1);
 		int rows, cols;
 		for (int i = 0; i < num_layers - 1; i++) {
 			infile >> rows >> cols;
+			weights[i] = Eigen::MatrixXd(rows, cols);
 			for (int j = 0; j < rows; j++) {
 				for (int k = 0; k < cols; k++) {
 					infile >> weights[i](j, k);
@@ -313,10 +368,12 @@ public:
 		}
 		for (int i = 0; i < num_layers - 1; i++) {
 			infile >> rows >> cols;
+			biases[i] = Eigen::MatrixXd(rows, cols);
 			for (int j = 0; j < rows; j++) {
 				infile >> biases[i](j, 0);
 			}
 		}
+
 	}
 
 	void output(std::string file) {
@@ -343,64 +400,4 @@ private:
 	int num_layers;
 };
 
-template <typename T>
-void shuffle(std::vector<T> &vec) {
-	srand((unsigned)time(NULL));
-	for (unsigned i = 0; i < vec.size(); ++i) {
-		int rand_i = rand() % ((int)vec.size() - i);
-		//vec.push_back(vec[rand_i]);
-		swap(vec[i], vec[rand_i]);
-	}
-}
-
-int argmax(std::vector<double> args) {
-	double max_val = 0.0;
-	int max_index = 0;
-	for (unsigned i = 0; i < args.size(); ++i) {
-		if (max_val < args[i]) {
-			max_val = args[i];
-			max_index = i;
-		}
-	}
-	return max_index;
-}
-
-int argmax(Eigen::VectorXd args) {
-	assert(args.cols() == 1);
-	double max_val = 0.0;
-	double val;
-	int max_index = 0;
-	for (int i = 0; i < args.rows(); ++i) {
-		val = args(i, 0);
-		if (max_val < args(i, 0)) {
-			max_val = args(i, 0);
-			max_index = i;
-		}
-	}
-
-	return max_index;
-}
-
-Eigen::MatrixXd dup_cols(const Eigen::VectorXd &mat, int num) {
-	Eigen::MatrixXd result(mat.rows(), num);
-	for (int i = 1; i < num; ++i) {
-		for (int j = 0; j < mat.rows(); ++j) {
-			result(j, i) = mat(j);
-		}
-	}
-	return result;
-}
-
-Eigen::MatrixXd hadamard_prod(Eigen::MatrixXd mat1, const Eigen::MatrixXd &mat2) {
-	assert(mat1.rows() == mat2.rows());
-	assert(mat1.cols() == mat2.cols());
-	int rows = mat1.rows(), cols = mat1.cols();
-	//Eigen::MatrixXd result(rows, cols);
-	for (int i = 0; i < rows; ++i) {
-		for (int j = 0; j < cols; ++j) {
-			mat1(i, j) *= mat2(i, j);
-		}
-	}
-	return mat1;
-}
 #endif

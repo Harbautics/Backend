@@ -79,8 +79,8 @@ public:
 
 	Eigen::MatrixXd delta(const Eigen::MatrixXd &z, Eigen::MatrixXd a, const Eigen::MatrixXd &y) {
 		assert(a.size() == y.size());
-		for (unsigned i = 0; i < a.rows(); ++i) {
-			for (unsigned j = 0; j < a.cols(); j++) {
+		for (int i = 0; i < a.rows(); ++i) {
+			for (int j = 0; j < a.cols(); j++) {
 				a(i, j) = (a(i, j) - y(i, j)) * sigmoid_prime(z(i, j));
 			}
 		}
@@ -88,6 +88,33 @@ public:
 	}
 };
 
+int argmax(std::vector<double> args) {
+	double max_val = 0.0;
+	int max_index = 0;
+	for (unsigned i = 0; i < args.size(); ++i) {
+		if (max_val < args[i]) {
+			max_val = args[i];
+			max_index = i;
+		}
+	}
+	return max_index;
+}
+
+int argmax(Eigen::VectorXd args) {
+	assert(args.cols() == 1);
+	double max_val = 0.0;
+	double val;
+	int max_index = 0;
+	for (int i = 0; i < args.rows(); ++i) {
+		val = args(i, 0);
+		if (max_val < args(i, 0)) {
+			max_val = args(i, 0);
+			max_index = i;
+		}
+	}
+
+	return max_index;
+}
 
 double norm(const Eigen::MatrixXd &vec) {
 	double result = 0;
@@ -153,6 +180,25 @@ class Classify {
 public:
 	Eigen::MatrixXd outputFN(const Eigen::MatrixXd &z) {
 		return sigmoid(z);
+	}
+};
+
+class SoftMax {
+public:
+	Eigen::MatrixXd outputFN(const Eigen::MatrixXd &z) {
+		auto base = sigmoid(z);
+		double sum = 0.0;
+		for (int i = 0; i < base.rows(); ++i) {
+			for (int j = 0; j < base.cols(); ++j) {
+				sum += base(i, j);
+			}
+		}
+		for (int i = 0; i < base.rows(); ++i) {
+			for (int j = 0; j < base.cols(); ++j) {
+				base(i, j) = base(i, j) / sum;
+			}
+		}
+		return base;
 	}
 };
 

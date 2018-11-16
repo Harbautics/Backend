@@ -5,7 +5,7 @@ from flask_cors import CORS, cross_origin
 from random import random
 
 import os
-#import sh
+import subprocess
 
 #Flask and MySQL setup
 application = app = Flask(__name__)
@@ -14,12 +14,10 @@ CORS(app)
 
 #MySQL setup
 '''
-
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'sdocs'
 app.config['MYSQL_DB'] = 'AAIDB'
 app.config['MYSQL_HOST'] = 'localhost'
-
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'sdocs123'
 app.config['MYSQL_DB'] = 'AAIDB'
@@ -125,25 +123,10 @@ def post_create_submission():
 	data = request.get_json()
 	cursor = mysql.connection.cursor()
 
-	
-	'''if not os.path.isdir("mldata/"):
+	if not os.path.isdir("mldata/"):
 		os.mkdir("mldata/")
-    
-	with open('mldata/run_data.txt', 'w') as f:
-		data_len = len(data['answers_ML'])
-		f.write(','+str(data_len))
-		for answer in data['answers_ML']:
-			code = answer[0]
-			val = answer[0]
-			if code != -1:
-				if code > 0:
-					options = [0] * code
-					options[val] = 1
-				elif code == -2:
-					options = [val]
-			for choice in options:
-				f.write(','+str(choice)) '''   
-
+	
+	
 
 	#get User id:
 	cursor.execute("SELECT * FROM Users WHERE email = %s", [data["email"]])
@@ -199,7 +182,27 @@ def post_create_submission():
 			return jsonify(retIdData), 400
 		cursor.execute("INSERT INTO Answers ( user_id, post_id, question_id, answer ) VALUES ( %s, %s, %s, %s )", [userId, postId, questionCount, answer])
 		questionCount = questionCount + 1
-
+	
+	count = 0
+	string_to_add = ""
+	with open('mldata/'+str(userId)+'.txt', 'w') as f:
+		#f.write(str(data_len))
+		for answer in data['answers_ML']:
+			code = answer[0]
+			val = answer[1]
+			options = []
+			if code != -1:
+				count += 1
+				if code > 0:
+					options = [0] * code
+					options[val] = 1
+				elif code == -2:
+					options = [val]
+				for choice in options:
+					string_to_add += ','+str(choice)
+		
+		f.write('1,'+str(count)+string_to_add)
+	
 	mysql.connection.commit()
 	
 	retData = {}
@@ -268,7 +271,7 @@ def get_submissions():
 	return_data['user_id'] = user_id
 	return_data['submissions'] = []
 	cursor.execute("SELECT a.post_id, a.status, p.org_id, p.name FROM Applicants a, Postings p WHERE a.user_id = %s \
-				    AND p.post_id = a.post_id", [user_id])
+					AND p.post_id = a.post_id", [user_id])
 	results = cursor.fetchall()
 
 	i = 0
@@ -287,11 +290,16 @@ def get_submissions():
 							AND a.post_id = q.post_id \
 							AND a.post_id = %s \
 							AND a.user_id = %s", [row[0], user_id])
-		responses = cursor.fetchone()
-		return_data['submissions'][i]['responses'] = {}
-		return_data['submissions'][i]['responses']['question_id'] = responses[0]
-		return_data['submissions'][i]['responses']['question'] = responses[1]
-		return_data['submissions'][i]['responses']['answer'] = responses[2]
+		responses = cursor.fetchall()
+
+		return_data['submissions'][i]['responses'] = []
+
+		for res in responses:
+			qa = {}
+			qa['question_id'] = res[0]
+			qa['question'] = res[1]
+			qa['answer'] = res[2]
+			return_data['submissions'][i]['responses'].append(qa)
 		i += 1
 
 
@@ -319,7 +327,7 @@ def update_applicant():
 	user_id = results[0]
 	#get user_id based off of the email and posting
 	cursor.execute("UPDATE Applicants SET status = %s \
-				    WHERE user_id = %s AND post_id = %s", [data['status'], user_id, data['post_id']])
+					WHERE user_id = %s AND post_id = %s", [data['status'], user_id, data['post_id']])
 	results = cursor.fetchall()
 
 	# if the applicant has been accepted we add them to the members list
@@ -490,7 +498,16 @@ def get_applicant_from_posting():
 			userData["name"] = ur[1]
 			userData["email"] = ur[2]
 		applicantData["userInfo"] = userData
-		applicantData["perc_match"] = round(random()*10000)/100.0
+		
+		args = ("./run", "out", 'mldata/'+str(userId)+".txt")
+		
+		popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+		popen.wait()
+		percentage = popen.stdout.read()
+		
+		applicantData["perc_match"] = float(percentage) * 100
+		
+		#applicantData["perc_match"] = round(random()*10000)/100.0
 		
 		cursor.execute("SELECT * FROM Answers WHERE user_id = %s AND post_id = %s", [userId, postId])
 		answerResults = cursor.fetchall()
