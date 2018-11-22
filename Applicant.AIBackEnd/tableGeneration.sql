@@ -1,7 +1,10 @@
 CREATE TABLE Organizations (
 	org_id BIGINT NOT NULL AUTO_INCREMENT,
 	name VARCHAR(50) UNIQUE,
+	location VARCHAR(100),
 	email VARCHAR(50),
+	link VARCHAR(100),
+	orgType ENUM('Professional', 'Social', 'School Club', 'Business'),
 	description VARCHAR(200),
 	PRIMARY KEY (org_id)
 );
