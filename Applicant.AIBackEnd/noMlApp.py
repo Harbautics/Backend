@@ -134,24 +134,8 @@ def post_create_submission():
 	cursor = mysql.connection.cursor()
 
 	
-	'''if not os.path.isdir("mldata/"):
+	if not os.path.isdir("mldata/"):
 		os.mkdir("mldata/")
-    
-	with open('mldata/run_data.txt', 'w') as f:
-		data_len = len(data['answers_ML'])
-		f.write(','+str(data_len))
-		for answer in data['answers_ML']:
-			code = answer[0]
-			val = answer[0]
-			if code != -1:
-				if code > 0:
-					options = [0] * code
-					options[val] = 1
-				elif code == -2:
-					options = [val]
-			for choice in options:
-				f.write(','+str(choice)) '''   
-
 
 	#get User id:
 	cursor.execute("SELECT * FROM Users WHERE email = %s", [data["email"]])
@@ -208,6 +192,26 @@ def post_create_submission():
 		cursor.execute("INSERT INTO Answers ( user_id, post_id, question_id, answer ) VALUES ( %s, %s, %s, %s )", [userId, postId, questionCount, answer])
 		questionCount = questionCount + 1
 
+    count = 0
+	string_to_add = ""
+	with open('mldata/'+str(userId)+'.txt', 'w') as f:
+		#f.write(str(data_len))
+		for answer in data['answers_ML']:
+			code = answer[0]
+			val = answer[1]
+			options = []
+			if code != -1:
+				count += 1
+				if code > 0:
+					options = [0] * code
+					options[val] = 1
+				elif code == -2:
+					options = [val]
+				for choice in options:
+					string_to_add += ','+str(choice)
+		
+		f.write('1,'+str(count)+string_to_add)    
+        
 	mysql.connection.commit()
 	
 	retData = {}
@@ -505,7 +509,14 @@ def get_applicant_from_posting():
 			userData["name"] = ur[1]
 			userData["email"] = ur[2]
 		applicantData["userInfo"] = userData
-		applicantData["perc_match"] = round(random()*10000)/100.0
+        
+        args = ("./run", "out", 'mldata/'+str(userId)+".txt")
+		
+		popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+		popen.wait()
+		percentage = popen.stdout.read()
+		
+		applicantData["perc_match"] = float(percentage) * 100
 		
 		cursor.execute("SELECT * FROM Answers WHERE user_id = %s AND post_id = %s", [userId, postId])
 		answerResults = cursor.fetchall()
