@@ -72,3 +72,10 @@ CREATE TABLE Members (
 	FOREIGN KEY (user_id) REFERENCES Users(user_id),
 	PRIMARY KEY (org_id, user_id)
 );
+
+CREATE TABLE PlayerIDs (
+	player_id VARCHAR(100) NOT NULL,
+	user_id BIGINT NOT NULL,
+	FOREIGN KEY (user_id) REFERENCES Users(user_id),
+	PRIMARY KEY (player_id)
+);
